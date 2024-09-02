@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract UnoGame is ReentrancyGuard {
-    using Counters for Counters.Counter;
-    Counters.Counter private _gameIds;
+    uint256 private _gameIdCounter;
+    uint256[] private activeGames;
 
     struct Game {
         uint256 id;
@@ -35,8 +34,8 @@ contract UnoGame is ReentrancyGuard {
     event GameEnded(uint256 indexed gameId);
 
     function createGame() external nonReentrant returns (uint256) {
-        _gameIds.increment();
-        uint256 newGameId = _gameIds.current();
+        _gameIdCounter++;
+        uint256 newGameId = _gameIdCounter;
 
         games[newGameId] = Game({
             id: newGameId,
@@ -49,7 +48,7 @@ contract UnoGame is ReentrancyGuard {
             directionClockwise: true,
             seed: uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender)))
         });
-
+        activeGames.push(newGameId);
         emit GameCreated(newGameId, msg.sender);
         return newGameId;
     }
@@ -124,7 +123,22 @@ contract UnoGame is ReentrancyGuard {
         require(isPlayerTurn(gameId, msg.sender), "Not your turn");
 
         games[gameId].isActive = false;
+        removeFromActiveGames(gameId);
         emit GameEnded(gameId);
+    }
+
+     function getActiveGames() external view returns (uint256[] memory) {
+        return activeGames;
+    }
+
+    function removeFromActiveGames(uint256 gameId) internal {
+        for (uint i = 0; i < activeGames.length; i++) {
+            if (activeGames[i] == gameId) {
+                activeGames[i] = activeGames[activeGames.length - 1];
+                activeGames.pop();
+                break;
+            }
+        }
     }
 
     function getGameState(uint256 gameId) external view returns (
