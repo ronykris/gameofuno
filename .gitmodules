@@ -1,0 +1,3 @@
+[submodule "unogame/lib/openzeppelin-contracts"]
+	path = unogame/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
