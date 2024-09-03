@@ -1,52 +1,127 @@
 import { ethers } from 'ethers';
-import { OffChainGameState, OnChainGameState, Action, Card } from './types';
-import { initializeOffChainState, applyActionToOffChainState, hashState, isValidPlay } from './gameLogic';
+import { OffChainGameState, OnChainGameState, Action, Card, UnoGameContract } from './types';
+import { initializeOffChainState, applyActionToOffChainState, hashState, isValidPlay, hashAction, hashCard } from './gameLogic';
 
-export function reconstructOffChainState(seed: number, players: string[], actionHashes: string[]): OffChainGameState {
-  let state = initializeOffChainState(seed, players);
-  for (const hash of actionHashes) {
-    const action = reconstructActionFromHash(hash, state);
-    state = applyActionToOffChainState(state, action);
-  }
-  return state;
-}
+const localActionCache: { [gameId: string]: Action[] } = {};
+const localPlayerHands: { [gameId: string]: { [playerAddress: string]: Card[] } } = {};
 
-export function reconstructActionFromHash(hash: string, currentState: OffChainGameState): Action {
-  for (const [player, hand] of Object.entries(currentState.playerHands)) {
-    for (const card of hand) {
-      if (isValidPlay(card, currentState)) {
-        const potentialAction = { player, card };
-        const potentialNewState = applyActionToOffChainState(currentState, potentialAction);
-        const potentialHash = hashState(potentialNewState);
-        if (potentialHash === hash) {
-          return potentialAction;
-        }
-      }
-    }
-    // Check for draw action
-    const drawAction = { player, card: null };
-    const drawState = applyActionToOffChainState(currentState, drawAction);
-    const drawHash = hashState(drawState);
-    if (drawHash === hash) {
-      return drawAction;
-    }
-  }
-  throw new Error('Failed to reconstruct action from hash');
-}
-
-export function verifyOffChainState(offChainState: OffChainGameState, onChainState: OnChainGameState): boolean {
-  if (Object.keys(offChainState.playerHands).length !== onChainState.players.length) return false;
-  if (offChainState.discardPile.length !== onChainState.turnCount + 1) return false;
+export async function reconstructOffChainState(
+    contract: UnoGameContract,
+    gameId: bigint,
+    playerAddress: string
+  ): Promise<OffChainGameState> {
+    const onChainState = await contract.getGameState(gameId);
+    const actions = await contract.getGameActions(gameId);
   
-  // Verify total number of cards
-  const totalCards = Object.values(offChainState.playerHands).flat().length 
-    + offChainState.deck.length 
-    + offChainState.discardPile.length;
-  if (totalCards !== 108) return false; // Standard UNO deck has 108 cards
+    let offChainState = initializeOffChainState(gameId, onChainState.players);
+  
+    localActionCache[gameId.toString()] = [];
+  
+    for (const action of actions) {
+        const reconstructedAction = reconstructActionFromHash(action.actionHash, playerAddress, gameId);
+        offChainState = applyActionToOffChainState(offChainState, reconstructedAction);
+    
+        localActionCache[gameId.toString()].push(reconstructedAction);
+    }
+  
+    if (hashState(offChainState) !== onChainState.stateHash) {
+      throw new Error('Reconstructed state does not match on-chain hash');
+    }
+  
+    return offChainState;
+  }
 
-  // Verify initial state hash
-  const initialStateHash = hashState(offChainState);
-  if (initialStateHash !== onChainState.stateHash) return false;
+  function reconstructActionFromHash(actionHash: string, playerAddress: string, gameId: bigint): Action {
+    const cachedActions = localActionCache[gameId.toString()] || [];
+    const matchingAction = cachedActions.find(action => hashAction(action) === actionHash);
+    
+    if (matchingAction) {
+      return matchingAction;
+    }
+  
+    // If action is not in cache, create a placeholder
+    return {
+      type: 'playCard',
+      player: playerAddress,
+      cardHash: ethers.keccak256(ethers.toUtf8Bytes('placeholder'))
+    };
+  }
 
-  return true;
-}
+  export function verifyOffChainState(offChainState: OffChainGameState, onChainState: OnChainGameState): boolean {
+    return hashState(offChainState) === onChainState.stateHash;
+  }
+
+  export function updateOffChainState(currentState: OffChainGameState, action: Action): OffChainGameState {
+    return applyActionToOffChainState(currentState, action);
+  }
+
+  export function createAction(actionType: 'playCard' | 'drawCard', player: string, card?: Card): Action {
+    if (actionType === 'playCard' && card) {
+      return {
+        type: 'playCard',
+        player,
+        cardHash: hashCard(card)
+      };
+    } else {
+      return {
+        type: 'drawCard',
+        player
+      };
+    }
+  }
+
+  export async function submitAction(
+    contract: UnoGameContract, 
+    gameId: bigint, 
+    action: Action, 
+    card?: Card
+  ): Promise<void> {
+    const actionHash = hashAction(action);
+    
+    // Determine special card effects
+    const isReverse = card?.value === 'reverse';
+    const isSkip = card?.value === 'skip';
+    const isDrawTwo = card?.value === 'draw2';
+    const isWildDrawFour = card?.value === 'wild_draw4';
+  
+    const tx = await contract.submitAction(
+      gameId,
+      actionHash,
+    );
+  
+    await tx.wait();
+  
+    
+    if (!localActionCache[gameId.toString()]) {
+      localActionCache[gameId.toString()] = [];
+    }
+    localActionCache[gameId.toString()].push(action);
+    
+  }
+
+  export function getPlayerHand(gameId: bigint, playerAddress: string): Card[] {
+    const gameHands = localPlayerHands[gameId.toString()];
+    if (gameHands && gameHands[playerAddress]) {
+      return gameHands[playerAddress];
+    }
+    return [];
+  }
+
+  export function setPlayerHand(gameId: bigint, playerAddress: string, hand: Card[]): void {
+    if (!localPlayerHands[gameId.toString()]) {
+      localPlayerHands[gameId.toString()] = {};
+    }
+    localPlayerHands[gameId.toString()][playerAddress] = hand;
+  }
+
+  export function isPlayerTurn(offChainState: OffChainGameState, playerAddress: string): boolean {
+    return offChainState.players[offChainState.currentPlayerIndex] === playerAddress;
+  }
+
+  export function initializePlayerHands(gameId: bigint, players: string[], deck: Card[]): void {
+    const gameHands: { [playerAddress: string]: Card[] } = {};
+    players.forEach(player => {
+      gameHands[player] = deck.splice(0, 7);
+    });
+    localPlayerHands[gameId.toString()] = gameHands;
+  }

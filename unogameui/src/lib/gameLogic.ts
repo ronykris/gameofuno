@@ -55,58 +55,80 @@ export function shuffleDeck(deck: Card[], seed: number): Card[] {
   return shuffled;
 }
 
-export function initializeOffChainState(seed: number, players: string[]): OffChainGameState {
-    const deck = shuffleDeck(createDeck(), seed)
-    const playerHands: { [address: string]: Card[] } = {}
-    players.forEach(player => {
-      playerHands[player] = deck.splice(0, 7)
-    })
-    const firstCard = deck.pop()!
-    return {
-      playerHands,
-      deck,
-      discardPile: [firstCard],
-      currentColor: firstCard.color,
-      currentValue: firstCard.value,
-      lastPlayedCard: firstCard
-    }
+export function initializeOffChainState(gameId: bigint, players: string[]): OffChainGameState {
+    const initialState: OffChainGameState = {
+      id: gameId,
+      players,
+      isActive: true,
+      currentPlayerIndex: 0,
+      lastActionTimestamp: BigInt(Math.floor(Date.now() / 1000)),
+      turnCount: BigInt(0),
+      directionClockwise: true,
+      playerHandsHash: {},
+      deckHash: '',
+      discardPileHash: '',
+      currentColor: null,
+      currentValue: null,
+      lastPlayedCardHash: null,
+      stateHash: '',
+      isStarted: false
+    };
+  
+    initialState.stateHash = hashState(initialState);
+    return initialState;
   }
 
-export function applyActionToOffChainState(currentState: OffChainGameState, action: Action): OffChainGameState {
-    const newState = JSON.parse(JSON.stringify(currentState)) as OffChainGameState;
-    const { player, card } = action;
+  export function startGame(state: OffChainGameState): OffChainGameState {
+    const newState = { ...state };
+    const deck = shuffleDeck(createDeck(), Number(state.id));
+    
+    // Deal cards
+    newState.playerHandsHash = {};
+    state.players.forEach(player => {
+      const hand = deck.splice(0, 7);
+      newState.playerHandsHash[player] = hashCards(hand);
+    });
   
-    if (card) {
-      // Play card
-      newState.playerHands[player] = newState.playerHands[player].filter(c => !(c.color === card.color && c.value === card.value));
-      newState.discardPile.push(card);
-      newState.currentColor = card.color === 'wild' ? newState.currentColor : card.color;
-      newState.currentValue = card.value;
-      newState.lastPlayedCard = card;
+    // Set up discard pile
+    const firstCard = deck.pop()!;
+    newState.discardPileHash = hashCards([firstCard]);
+    newState.currentColor = firstCard.color;
+    newState.currentValue = firstCard.value;
+    newState.lastPlayedCardHash = hashCard(firstCard);
   
-      // Handle special cards
-      switch (card.value) {
-        case 'draw2':
-          // Next player draws 2 cards
-          const nextPlayer = getNextPlayer(player, newState.playerHands);
-          newState.playerHands[nextPlayer].push(...newState.deck.splice(0, 2));
-          break;
-        case 'wild_draw4':
-          // Next player draws 4 cards
-          const nextPlayerWild4 = getNextPlayer(player, newState.playerHands);
-          newState.playerHands[nextPlayerWild4].push(...newState.deck.splice(0, 4));
-          break;
-      }
-    } else {
-      // Draw card
-      if (newState.deck.length === 0) {
-        // Reshuffle discard pile if deck is empty
-        newState.deck = shuffleDeck([...newState.discardPile.slice(0, -1)], Date.now());
-        newState.discardPile = [newState.discardPile[newState.discardPile.length - 1]];
-      }
-      const drawnCard = newState.deck.pop()!;
-      newState.playerHands[player].push(drawnCard);
+    // Hash remaining deck
+    newState.deckHash = hashCards(deck);
+  
+    // Randomly choose first player
+    newState.currentPlayerIndex = Math.floor(Math.random() * state.players.length);
+  
+    newState.isStarted = true;
+    newState.stateHash = hashState(newState);
+  
+    return newState;
+  }
+
+  export function applyActionToOffChainState(state: OffChainGameState, action: Action): OffChainGameState {
+    const newState = { ...state };
+  
+    // Highlight start
+    switch (action.type) {
+      case 'startGame':
+        return startGame(state);
+      case 'playCard':
+        // Implementation depends on how you want to handle card playing with hashed states
+        break;
+      case 'drawCard':
+        // Implementation depends on how you want to handle card drawing with hashed states
+        break;
     }
+    // Highlight end
+  
+    newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+    newState.turnCount++;
+    newState.lastActionTimestamp = BigInt(Math.floor(Date.now() / 1000));
+  
+    newState.stateHash = hashState(newState);
   
     return newState;
   }
@@ -118,5 +140,69 @@ function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: 
 }
 
 export function hashState(state: OffChainGameState): string {
-    return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(state)))
-}
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const encodedState = abiCoder.encode(
+      ['uint256', 'address[]', 'bool', 'uint256', 'uint256', 'uint256', 'bool', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
+      [
+        state.id,
+        state.players,
+        state.isActive,
+        state.currentPlayerIndex,
+        state.lastActionTimestamp,
+        state.turnCount,
+        state.directionClockwise,
+        JSON.stringify(state.playerHandsHash),
+        state.deckHash,
+        state.discardPileHash,
+        state.currentColor || '',
+        state.currentValue || '',
+        state.lastPlayedCardHash || '',
+        state.isStarted
+      ]
+    );
+    return ethers.keccak256(encodedState);
+  }
+
+export function hashAction(action: Action): string {
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const encodedAction = abiCoder.encode(
+      ['string', 'address', 'string'],
+      [
+        action.type,
+        action.player,
+        action.cardHash || ''
+      ]
+    );
+    return ethers.keccak256(encodedAction);
+  }
+
+  export function hashCard(card: Card): string {
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const encodedCard = abiCoder.encode(
+      ['string', 'string'],
+      [card.color, card.value]
+    );
+    return ethers.keccak256(encodedCard);
+  }
+
+  export function hashCards(cards: Card[]): string {
+    const cardHashes = cards.map(hashCard);
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const encodedCards = abiCoder.encode(['bytes32[]'], [cardHashes]);
+    return ethers.keccak256(encodedCards);
+  }
+
+  export function storePlayerHand(gameId: bigint, playerAddress: string, hand: Card[]): void {
+    const key = `game_${gameId}_player_${playerAddress}`;
+    const encryptedHand = JSON.stringify(hand); // In a real implementation, encrypt this data
+    localStorage.setItem(key, encryptedHand);
+  }
+  
+  export function getPlayerHand(gameId: bigint, playerAddress: string): Card[] {
+    const key = `game_${gameId}_player_${playerAddress}`;
+    const encryptedHand = localStorage.getItem(key);
+    if (encryptedHand) {
+      return JSON.parse(encryptedHand); // In a real implementation, decrypt this data
+    }
+    return [];
+  }

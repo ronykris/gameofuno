@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ethers } from 'ethers'
-import { UnoGameContract, OffChainGameState, OnChainGameState, Card } from '../../../lib/types'
-import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState } from '../../../lib/gameLogic'
+import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../../lib/types'
+import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand } from '../../../lib/gameLogic'
 import { getContract } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
@@ -20,6 +20,8 @@ export default function Game() {
   const [offChainGameState, setOffChainGameState] = useState<OffChainGameState | null>(null)
   const [pendingActions, setPendingActions] = useState<{action: any, txHash: string}[]>([])
   const [stateMismatchError, setStateMismatchError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [playerHand, setPlayerHand] = useState<Card[]>([])
 
   useEffect(() => {
     const setup = async () => {
@@ -31,102 +33,81 @@ export default function Game() {
         const bigIntId = BigInt(id as string)
         setGameId(bigIntId)
         console.log('Game ID: ', bigIntId)
-        await fetchGameState(contract, bigIntId)
+        await fetchGameState(contract, bigIntId, account)
       }
     }
     setup()
   }, [id])
 
-  const fetchGameState = async (contract: UnoGameContract, gameId: bigint) => {
+  const fetchGameState = async (contract: UnoGameContract, gameId: bigint, account: string) => {
     try {
-        console.log('Fetching game state for game ID:', gameId.toString());
-        const onChainState = await contract.getGameState(gameId)
-        console.log('Fetched on-chain state:', onChainState);
-        setOnChainGameState(onChainState)
-        console.log('OnChain State: ',onChainState)
-    
-        const actions = await contract.getGameActions(gameId)
-        console.log('Fetched game actions:', actions);
-
-        // Reconstruct off-chain state
-        let offChainState = initializeOffChainState(Number(onChainState.seed), onChainState.players)
-        console.log('Initial OffChain State: ',offChainState)
-
-        for (const action of actions) {
-            const reconstructedAction = reconstructActionFromHash(action.actionHash, offChainState)
-            console.log('Reconstructed action:', reconstructedAction)
-            offChainState = applyActionToOffChainState(offChainState, reconstructedAction)
-            console.log('State after applying action:', offChainState)
+      const onChainGameState = await contract.getGameState(gameId)
+      setOnChainGameState(onChainGameState)
+      console.log('On Chain Game state: ', onChainGameState)
+      let offChainGameState = initializeOffChainState(gameId, onChainGameState.players)
+      setOffChainGameState(offChainGameState)
+      console.log('Off chain game state: ',offChainGameState)
+      
+      const actions = await contract.getGameActions(gameId)
+      for (const action of actions) {
+        const decodedAction: Action = {
+          type: 'playCard', // This is a simplification. You'd need to properly decode the action.
+          player: action.player,
+          cardHash: action.actionHash
         }
+        offChainGameState = applyActionToOffChainState(offChainGameState, decodedAction)
+      }
 
-        const reconstructedHash = hashState(offChainState)
-        console.log('Reconstructed hash:', reconstructedHash)
-        console.log('On-chain hash:', onChainState.stateHash)
-        if (reconstructedHash !== onChainState.stateHash) {
-            const errorMessage = 'Reconstructed state does not match on-chain hash'
-            console.error(errorMessage)
-            setStateMismatchError(errorMessage)
-            // You might want to trigger a full state reset or reconciliation here
-            return
-        }
-        setStateMismatchError(null) 
-        
-
-        for (const pendingAction of pendingActions) {
-            offChainState = applyActionToOffChainState(offChainState, pendingAction.action)
-        }
-        setOffChainGameState(offChainState)
+      setOffChainGameState(offChainGameState)
     } catch (error) {
-        console.error('Error fetching game state:', error)
-        setStateMismatchError('Failed to fetch game state. Please try again.')
-    }     
+      console.error('Error fetching game state:', error)
+      setError('Failed to fetch game state. Please try again.')
+    }
   }
 
-    const playCard = async (card: Card) => {
-        if (!contract || !account || !offChainGameState || !onChainGameState) return
-    
-        if (!isValidPlay(card, offChainGameState)) {
-            console.error('Invalid play')
-            return
-        }
+  const handleStartGame = async () => {
+    if (!contract || !account || !offChainGameState || !gameId) return
 
-        const action = { player: account, card }
-    
-        // Optimistically update the local state
-        const newOffChainState = applyActionToOffChainState(offChainGameState, action)
-        setOffChainGameState(newOffChainState)
+    const newState = startGame(offChainGameState)
+    const action: Action = { type: 'startGame', player: account }
+    const actionHash = hashAction(action)
 
-        try {
-            const actionHash = hashState(newOffChainState)
-            const isReverse = card.value === 'reverse'
-            const isSkip = card.value === 'skip'
-            const isDrawTwo = card.value === 'draw2'
-            const isWildDrawFour = card.value === 'wild_draw4'
+    try {
+      const tx = await contract.startGame(gameId, newState.stateHash)
+      await tx.wait()
+      setOffChainGameState(newState)
 
-            const tx = await contract.submitAction(gameId!, actionHash, isReverse, isSkip, isDrawTwo, isWildDrawFour)
-      
-            // Add to pending actions
-            setPendingActions(prev => [...prev, { action, txHash: tx.hash }])
-
-            // Wait for transaction confirmation
-            await tx.wait()
-
-            // Remove from pending actions once confirmed
-            setPendingActions(prev => prev.filter(a => a.txHash !== tx.hash))
-
-            // Fetch latest state after confirmation
-            await fetchGameState(contract, BigInt(id as string))
-        } catch (error) {
-            console.error('Error playing card:', error)
-            // Revert the optimistic update
-            await fetchGameState(contract, BigInt(id as string))
-        }
+      // Store the player's hand locally
+      const playerHand = newState.playerHands[account]
+      storePlayerHand(gameId, account, playerHand)
+      setPlayerHand(playerHand)
+    } catch (error) {
+      console.error('Error starting game:', error)
+      setError('Failed to start game. Please try again.')
     }
+  }
+  
+  const playCard = async (cardHash: string) => {
+    if (!contract || !account || !offChainGameState || !gameId) return
+    
+    const action: Action = { type: 'playCard', player: account, cardHash }
+    const newState = applyActionToOffChainState(offChainGameState, action)
+    const actionHash = hashAction(action)
+
+    try {
+      const tx = await contract.submitAction(gameId, actionHash)
+      await tx.wait()
+      setOffChainGameState(newState)
+    } catch (error) {
+      console.error('Error playing card:', error)
+      setError('Failed to submit action. Please try again.')
+    }
+  }
 
     const drawCard = async () => {
         if (!contract || !account || !offChainGameState || !onChainGameState) return
     
-        const action = { player: account, card: null }
+        const action = { type: 'startGame' as ActionType, player: account}
         
         // Optimistically update the local state
         const newOffChainState = applyActionToOffChainState(offChainGameState, action)
@@ -134,7 +115,7 @@ export default function Game() {
     
         try {
             const actionHash = hashState(newOffChainState)
-            const tx = await contract.submitAction(gameId!, actionHash, false, false, false, false)
+            const tx = await contract.submitAction(gameId!, actionHash)
           
             // Add to pending actions
             setPendingActions(prev => [...prev, { action, txHash: tx.hash }])
@@ -146,11 +127,11 @@ export default function Game() {
             setPendingActions(prev => prev.filter(a => a.txHash !== tx.hash))
     
             // Fetch latest state after confirmation
-            await fetchGameState(contract, BigInt(id as string))
+            await fetchGameState(contract, BigInt(id as string), account)
         } catch (error) {
             console.error('Error drawing card:', error)
             // Revert the optimistic update
-            await fetchGameState(contract, BigInt(id as string))
+            await fetchGameState(contract, BigInt(id as string), account)
         }
     }
      
@@ -167,34 +148,43 @@ export default function Game() {
                 <span className="block sm:inline">{stateMismatchError}</span>
             </div>
             )}
-          <GameBoard
-            currentCard={offChainGameState.lastPlayedCard!}
-            players={onChainGameState.players}
-            currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
-          />
-          <PlayerHand
-            hand={offChainGameState.playerHands[account]}
-            onCardPlay={playCard}
-          />
-          <button
-            onClick={drawCard}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            disabled={canPlay(offChainGameState.playerHands[account], offChainGameState.currentColor, offChainGameState.currentValue)}
-          >
-            Draw Card
-          </button>
-          {pendingActions.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">Pending Actions:</h2>
-          <ul>
-            {pendingActions.map((action, index) => (
-              <li key={index}>
-                {action.action.card ? `Playing ${action.action.card.color} ${action.action.card.value}` : 'Drawing a card'}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+            {offChainGameState && !offChainGameState.isStarted && (
+                <button onClick={handleStartGame}>Start Game</button>
+            )}
+            {offChainGameState && offChainGameState.isStarted && (
+                <>
+                  <GameBoard
+                  currentCard={offChainGameState.lastPlayedCard!}
+                  players={onChainGameState.players}
+                  currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
+                />
+                <PlayerHand
+                  hand={offChainGameState.playerHands[account]}
+                  onCardPlay={playCard}
+                />
+                <button
+                  onClick={drawCard}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={canPlay(offChainGameState.playerHands[account], offChainGameState.currentColor, offChainGameState.currentValue)}
+                >
+                  Draw Card
+                </button>
+                {pendingActions.length > 0 && (
+              <div className="mt-4">
+                <h2 className="text-xl font-bold">Pending Actions:</h2>
+                <ul>
+                  {pendingActions.map((action, index) => (
+                    <li key={index}>
+                      {action.action.card ? `Playing ${action.action.card.color} ${action.action.card.value}` : 'Drawing a card'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+                </>
+                
+            )}
+        
         </div>
     )
 }

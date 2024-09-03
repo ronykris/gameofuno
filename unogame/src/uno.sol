@@ -16,7 +16,7 @@ contract UnoGame is ReentrancyGuard {
         uint256 lastActionTimestamp;
         uint256 turnCount;
         bool directionClockwise;
-        uint256 seed;
+        bool isStarted;
     }
 
     struct Action {
@@ -30,6 +30,7 @@ contract UnoGame is ReentrancyGuard {
 
     event GameCreated(uint256 indexed gameId, address creator);
     event PlayerJoined(uint256 indexed gameId, address player);
+    event GameStarted(uint256 indexed gameId, bytes32 initialStateHash);
     event ActionSubmitted(uint256 indexed gameId, address player, bytes32 actionHash);
     event GameEnded(uint256 indexed gameId);
 
@@ -49,11 +50,23 @@ contract UnoGame is ReentrancyGuard {
             lastActionTimestamp: block.timestamp,
             turnCount: 0,
             directionClockwise: true,
-            seed: seed
+            isStarted: false
         });
         _activeGames.push(newGameId);
         emit GameCreated(newGameId, msg.sender);
         return newGameId;
+    }
+
+    function startGame(uint256 gameId, bytes32 initialStateHash) external {
+        Game storage game = games[gameId];
+        require(!game.isStarted, "Game already started");
+        require(game.players.length >= 2, "Not enough players");
+        
+        game.isStarted = true;
+        game.stateHash = initialStateHash;
+        game.lastActionTimestamp = block.timestamp;
+        
+        emit GameStarted(gameId, initialStateHash);
     }
 
     function joinGame(uint256 gameId) external nonReentrant {
@@ -63,19 +76,24 @@ contract UnoGame is ReentrancyGuard {
         games[gameId].players.push(msg.sender);
         emit PlayerJoined(gameId, msg.sender);
 
-        if (games[gameId].players.length == 4) {
-            startGame(gameId);
-        }
+        //if (games[gameId].players.length == 4) {
+        //    startGame(gameId);
+        //}
     }
 
-    function startGame(uint256 gameId) internal {
-        Game storage game = games[gameId];
-        require(game.players.length >= 2, "Not enough players");
-        game.seed = uint256(keccak256(abi.encodePacked(game.seed, block.timestamp, block.difficulty)));
-        game.stateHash = keccak256(abi.encodePacked(game.stateHash, game.seed));
+    function hashState(Game memory game) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(
+            game.id,
+            game.players,
+            game.isActive,
+            game.currentPlayerIndex,
+            game.lastActionTimestamp,
+            game.turnCount,
+            game.directionClockwise
+        ));
     }
 
-    function submitAction(uint256 gameId, bytes32 actionHash, bool isReverse, bool isSkip, bool isDrawTwo, bool isWildDrawFour) external nonReentrant {
+    function submitAction(uint256 gameId, bytes32 actionHash) external nonReentrant {
         Game storage game = games[gameId];
         require(game.isActive, "Game is not active");
         require(isPlayerTurn(gameId, msg.sender), "Not your turn");
@@ -88,34 +106,17 @@ contract UnoGame is ReentrancyGuard {
             timestamp: block.timestamp
         }));
 
-        updateGameState(gameId, isReverse, isSkip, isDrawTwo, isWildDrawFour);
+        updateGameState(gameId);
 
         emit ActionSubmitted(gameId, msg.sender, actionHash);
     }
 
-    function updateGameState(uint256 gameId, bool isReverse, bool isSkip, bool isDrawTwo, bool isWildDrawFour) internal {
+    function updateGameState(uint256 gameId) internal {
         Game storage game = games[gameId];
-        
-        if (isReverse) {
-            game.directionClockwise = !game.directionClockwise;
-        }
-
-        uint256 playerCount = game.players.length;
-        uint256 nextPlayerIndex;
-
-        if (isSkip || isDrawTwo || isWildDrawFour) {
-            nextPlayerIndex = game.directionClockwise ? 
-                (game.currentPlayerIndex + 2) % playerCount :
-                (game.currentPlayerIndex + playerCount - 2) % playerCount;
-        } else {
-            nextPlayerIndex = game.directionClockwise ? 
-                (game.currentPlayerIndex + 1) % playerCount :
-                (game.currentPlayerIndex + playerCount - 1) % playerCount;
-        }
-
-        game.currentPlayerIndex = nextPlayerIndex;
-        game.lastActionTimestamp = block.timestamp;
         game.turnCount++;
+        game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
+        game.lastActionTimestamp = block.timestamp;
+        game.stateHash = hashState(game);
     }
 
     function isPlayerTurn(uint256 gameId, address player) public view returns (bool) {
@@ -150,7 +151,7 @@ contract UnoGame is ReentrancyGuard {
         uint256 lastActionTimestamp,
         uint256 turnCount,
         bool directionClockwise,
-        uint256 seed
+        bool isStarted
     ) {
         require(gameId > 0 && gameId <= _gameIdCounter, "Invalid game ID");
         Game storage game = games[gameId];
@@ -163,7 +164,7 @@ contract UnoGame is ReentrancyGuard {
             game.lastActionTimestamp,
             game.turnCount,
             game.directionClockwise,
-            game.seed
+            game.isStarted
         );
     }
 

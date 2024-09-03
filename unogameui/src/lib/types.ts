@@ -9,36 +9,50 @@ export interface Card {
 }
 
 export interface OffChainGameState {
-  playerHands: { [address: string]: Card[] };
-  deck: Card[];
-  discardPile: Card[];
-  currentColor: CardColor;
-  currentValue: CardValue;
-  lastPlayedCard: Card | null;
-}
+    id: bigint;
+    players: string[];
+    isActive: boolean;
+    currentPlayerIndex: number;
+    lastActionTimestamp: bigint;
+    turnCount: bigint;
+    directionClockwise: boolean;
+    playerHandsHash: { [address: string]: string };
+    deckHash: string;
+    discardPileHash: string;
+    currentColor: CardColor | null;
+    currentValue: CardValue | null;
+    lastPlayedCardHash: string | null;
+    stateHash: string;
+    isStarted: boolean;
+  }
 
 export interface OnChainGameState {
-  players: string[];
-  isActive: boolean;
-  currentPlayerIndex: number;
-  stateHash: string;
-  lastActionTimestamp: number;
-  turnCount: number;
-  directionClockwise: boolean;
-  seed: number;
+    id: bigint;
+    players: string[];
+    isActive: boolean;
+    currentPlayerIndex: bigint;
+    stateHash: string;
+    lastActionTimestamp: bigint;
+    turnCount: bigint;
+    directionClockwise: boolean;
+    isStarted: boolean;
 }
 
+export type ActionType = 'startGame' | 'playCard' | 'drawCard';
+
 export interface Action {
+  type: ActionType;
   player: string;
-  card: Card | null;  // null represents drawing a card
+  cardHash?: string;
 }
 
 export interface UnoGameContract {
   createGame: () => Promise<any>;
-  joinGame: (gameId: BigInt) => Promise<any>;
-  submitAction: (gameId: bigint, actionHash: string, isReverse: boolean, isSkip: boolean, isDrawTwo: boolean, isWildDrawFour: boolean) => Promise<any>;
+  joinGame: (gameId: bigint) => Promise<any>;
+  startGame: (gameId: bigint, initialStateHash: string) => Promise<any>;
+  submitAction: (gameId: bigint, actionHash: string) => Promise<any>;
   getGameState: (gameId: bigint) => Promise<OnChainGameState>;
-  getGameActions: (gameId: bigint) => Promise<{ player: string; actionHash: string; timestamp: number }[]>;
+  getGameActions: (gameId: bigint) => Promise<{ player: string; actionHash: string; timestamp: bigint }[]>;
   endGame: (gameId: bigint) => Promise<any>;
-  getActiveGames: () => Promise<BigInt[]>;
+  getActiveGames: () => Promise<bigint[]>;
 }
