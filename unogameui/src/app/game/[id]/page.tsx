@@ -22,6 +22,7 @@ export default function Game() {
   const [stateMismatchError, setStateMismatchError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [playerHand, setPlayerHand] = useState<Card[]>([])
+  const [playerToStart, setPlayerToStart] = useState<string | null>(null)
 
   useEffect(() => {
     const setup = async () => {
@@ -69,6 +70,10 @@ export default function Game() {
     if (!contract || !account || !offChainGameState || !gameId) return
 
     const newState = startGame(offChainGameState)
+    const startingPlayer = onChainGameState?.players[newState.currentPlayerIndex]
+    console.log(startingPlayer)
+    setPlayerToStart(startingPlayer!)
+    console.log('Player to start: ', playerToStart)
     const action: Action = { type: 'startGame', player: account }
     const actionHash = hashAction(action)
 
@@ -149,10 +154,11 @@ export default function Game() {
             </div>
             )}
             {offChainGameState && !offChainGameState.isStarted && (
-                <button onClick={handleStartGame}>Start Game</button>
+                <button onClick={handleStartGame} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4" >Start Game</button>
             )}
-            {offChainGameState && offChainGameState.isStarted && (
+            {offChainGameState && offChainGameState && (
                 <>
+                 
                   <GameBoard
                   currentCard={offChainGameState.lastPlayedCard!}
                   players={onChainGameState.players}

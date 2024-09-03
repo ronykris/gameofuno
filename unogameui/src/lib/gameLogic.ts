@@ -81,6 +81,7 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
   export function startGame(state: OffChainGameState): OffChainGameState {
     const newState = { ...state };
     const deck = shuffleDeck(createDeck(), Number(state.id));
+    console.log(deck)
     
     // Deal cards
     newState.playerHandsHash = {};
