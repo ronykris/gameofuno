@@ -50,7 +50,6 @@ export default function Lobby() {
     if (contract) {
       try {
         console.log(`Joining game ${gameId.toString()}...`)
-        // Convert BigInt to bigint
         const gameIdBigint = BigInt(gameId.toString())
         const tx = await contract.joinGame(gameIdBigint)
         console.log('Transaction hash:', tx.hash)

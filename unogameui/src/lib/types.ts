@@ -36,9 +36,9 @@ export interface Action {
 export interface UnoGameContract {
   createGame: () => Promise<any>;
   joinGame: (gameId: BigInt) => Promise<any>;
-  submitAction: (gameId: number, actionHash: string, isReverse: boolean, isSkip: boolean, isDrawTwo: boolean, isWildDrawFour: boolean) => Promise<any>;
-  getGameState: (gameId: number) => Promise<OnChainGameState>;
-  getGameActions: (gameId: number) => Promise<{ player: string; actionHash: string; timestamp: number }[]>;
-  endGame: (gameId: number) => Promise<any>;
+  submitAction: (gameId: bigint, actionHash: string, isReverse: boolean, isSkip: boolean, isDrawTwo: boolean, isWildDrawFour: boolean) => Promise<any>;
+  getGameState: (gameId: bigint) => Promise<OnChainGameState>;
+  getGameActions: (gameId: bigint) => Promise<{ player: string; actionHash: string; timestamp: number }[]>;
+  endGame: (gameId: bigint) => Promise<any>;
   getActiveGames: () => Promise<BigInt[]>;
 }

@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract UnoGame is ReentrancyGuard {
     uint256 private _gameIdCounter;
-    uint256[] private activeGames;
+    uint256[] private _activeGames;
 
     struct Game {
         uint256 id;
         address[] players;
         bool isActive;
         uint256 currentPlayerIndex;
-        bytes32 initialStateHash;
+        bytes32 stateHash;
         uint256 lastActionTimestamp;
         uint256 turnCount;
         bool directionClockwise;
@@ -37,18 +37,21 @@ contract UnoGame is ReentrancyGuard {
         _gameIdCounter++;
         uint256 newGameId = _gameIdCounter;
 
+        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender)));
+        bytes32 initialStateHash = keccak256(abi.encodePacked(newGameId, seed));
+
         games[newGameId] = Game({
             id: newGameId,
             players: new address[](0),
             isActive: true,
             currentPlayerIndex: 0,
-            initialStateHash: bytes32(0),
+            stateHash: initialStateHash,
             lastActionTimestamp: block.timestamp,
             turnCount: 0,
             directionClockwise: true,
-            seed: uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender)))
+            seed: seed
         });
-        activeGames.push(newGameId);
+        _activeGames.push(newGameId);
         emit GameCreated(newGameId, msg.sender);
         return newGameId;
     }
@@ -66,17 +69,18 @@ contract UnoGame is ReentrancyGuard {
     }
 
     function startGame(uint256 gameId) internal {
-        require(games[gameId].players.length >= 2, "Not enough players");
-        games[gameId].seed = uint256(keccak256(abi.encodePacked(games[gameId].seed, block.timestamp, block.difficulty)));
+        Game storage game = games[gameId];
+        require(game.players.length >= 2, "Not enough players");
+        game.seed = uint256(keccak256(abi.encodePacked(game.seed, block.timestamp, block.difficulty)));
+        game.stateHash = keccak256(abi.encodePacked(game.stateHash, game.seed));
     }
 
     function submitAction(uint256 gameId, bytes32 actionHash, bool isReverse, bool isSkip, bool isDrawTwo, bool isWildDrawFour) external nonReentrant {
-        require(games[gameId].isActive, "Game is not active");
+        Game storage game = games[gameId];
+        require(game.isActive, "Game is not active");
         require(isPlayerTurn(gameId, msg.sender), "Not your turn");
 
-        if (gameActions[gameId].length == 0) {
-            games[gameId].initialStateHash = actionHash;
-        }
+        game.stateHash = keccak256(abi.encodePacked(game.stateHash, actionHash));
 
         gameActions[gameId].push(Action({
             player: msg.sender,
@@ -119,23 +123,20 @@ contract UnoGame is ReentrancyGuard {
     }
 
     function endGame(uint256 gameId) external {
-        require(games[gameId].isActive, "Game is not active");
+        Game storage game = games[gameId];
+        require(game.isActive, "Game is not active");
         require(isPlayerTurn(gameId, msg.sender), "Not your turn");
 
-        games[gameId].isActive = false;
+        game.isActive = false;
         removeFromActiveGames(gameId);
         emit GameEnded(gameId);
     }
 
-     function getActiveGames() external view returns (uint256[] memory) {
-        return activeGames;
-    }
-
     function removeFromActiveGames(uint256 gameId) internal {
-        for (uint i = 0; i < activeGames.length; i++) {
-            if (activeGames[i] == gameId) {
-                activeGames[i] = activeGames[activeGames.length - 1];
-                activeGames.pop();
+        for (uint256 i = 0; i < _activeGames.length; i++) {
+            if (_activeGames[i] == gameId) {
+                _activeGames[i] = _activeGames[_activeGames.length - 1];
+                _activeGames.pop();
                 break;
             }
         }
@@ -145,18 +146,20 @@ contract UnoGame is ReentrancyGuard {
         address[] memory players,
         bool isActive,
         uint256 currentPlayerIndex,
-        bytes32 initialStateHash,
+        bytes32 stateHash,
         uint256 lastActionTimestamp,
         uint256 turnCount,
         bool directionClockwise,
         uint256 seed
     ) {
+        require(gameId > 0 && gameId <= _gameIdCounter, "Invalid game ID");
         Game storage game = games[gameId];
+        require(game.id == gameId, "Game does not exist");
         return (
             game.players,
             game.isActive,
             game.currentPlayerIndex,
-            game.initialStateHash,
+            game.stateHash,
             game.lastActionTimestamp,
             game.turnCount,
             game.directionClockwise,
@@ -165,6 +168,13 @@ contract UnoGame is ReentrancyGuard {
     }
 
     function getGameActions(uint256 gameId) external view returns (Action[] memory) {
+        require(gameId > 0 && gameId <= _gameIdCounter, "Invalid game ID");
+        require(games[gameId].id == gameId, "Game does not exist");
+        
         return gameActions[gameId];
+    }
+
+    function getActiveGames() external view returns (uint256[] memory) {
+        return _activeGames;
     }
 }

@@ -56,60 +56,60 @@ export function shuffleDeck(deck: Card[], seed: number): Card[] {
 }
 
 export function initializeOffChainState(seed: number, players: string[]): OffChainGameState {
-  const deck = shuffleDeck(createDeck(), seed);
-  const playerHands: { [address: string]: Card[] } = {};
-  players.forEach(player => {
-    playerHands[player] = deck.splice(0, 7);
-  });
-  const firstCard = deck.pop()!;
-  return {
-    playerHands,
-    deck,
-    discardPile: [firstCard],
-    currentColor: firstCard.color,
-    currentValue: firstCard.value,
-    lastPlayedCard: firstCard
-  };
-}
-
-export function applyActionToOffChainState(currentState: OffChainGameState, action: Action): OffChainGameState {
-  const newState = JSON.parse(JSON.stringify(currentState)) as OffChainGameState;
-  const { player, card } = action;
-
-  if (card) {
-    // Play card
-    newState.playerHands[player] = newState.playerHands[player].filter(c => !(c.color === card.color && c.value === card.value));
-    newState.discardPile.push(card);
-    newState.currentColor = card.color === 'wild' ? newState.currentColor : card.color;
-    newState.currentValue = card.value;
-    newState.lastPlayedCard = card;
-
-    // Handle special cards
-    switch (card.value) {
-      case 'draw2':
-        // Next player draws 2 cards
-        const nextPlayer = getNextPlayer(player, newState.playerHands);
-        newState.playerHands[nextPlayer].push(...newState.deck.splice(0, 2));
-        break;
-      case 'wild_draw4':
-        // Next player draws 4 cards
-        const nextPlayerWild4 = getNextPlayer(player, newState.playerHands);
-        newState.playerHands[nextPlayerWild4].push(...newState.deck.splice(0, 4));
-        break;
+    const deck = shuffleDeck(createDeck(), seed)
+    const playerHands: { [address: string]: Card[] } = {}
+    players.forEach(player => {
+      playerHands[player] = deck.splice(0, 7)
+    })
+    const firstCard = deck.pop()!
+    return {
+      playerHands,
+      deck,
+      discardPile: [firstCard],
+      currentColor: firstCard.color,
+      currentValue: firstCard.value,
+      lastPlayedCard: firstCard
     }
-  } else {
-    // Draw card
-    if (newState.deck.length === 0) {
-      // Reshuffle discard pile if deck is empty
-      newState.deck = shuffleDeck([...newState.discardPile.slice(0, -1)], Date.now());
-      newState.discardPile = [newState.discardPile[newState.discardPile.length - 1]];
-    }
-    const drawnCard = newState.deck.pop()!;
-    newState.playerHands[player].push(drawnCard);
   }
 
-  return newState;
-}
+export function applyActionToOffChainState(currentState: OffChainGameState, action: Action): OffChainGameState {
+    const newState = JSON.parse(JSON.stringify(currentState)) as OffChainGameState;
+    const { player, card } = action;
+  
+    if (card) {
+      // Play card
+      newState.playerHands[player] = newState.playerHands[player].filter(c => !(c.color === card.color && c.value === card.value));
+      newState.discardPile.push(card);
+      newState.currentColor = card.color === 'wild' ? newState.currentColor : card.color;
+      newState.currentValue = card.value;
+      newState.lastPlayedCard = card;
+  
+      // Handle special cards
+      switch (card.value) {
+        case 'draw2':
+          // Next player draws 2 cards
+          const nextPlayer = getNextPlayer(player, newState.playerHands);
+          newState.playerHands[nextPlayer].push(...newState.deck.splice(0, 2));
+          break;
+        case 'wild_draw4':
+          // Next player draws 4 cards
+          const nextPlayerWild4 = getNextPlayer(player, newState.playerHands);
+          newState.playerHands[nextPlayerWild4].push(...newState.deck.splice(0, 4));
+          break;
+      }
+    } else {
+      // Draw card
+      if (newState.deck.length === 0) {
+        // Reshuffle discard pile if deck is empty
+        newState.deck = shuffleDeck([...newState.discardPile.slice(0, -1)], Date.now());
+        newState.discardPile = [newState.discardPile[newState.discardPile.length - 1]];
+      }
+      const drawnCard = newState.deck.pop()!;
+      newState.playerHands[player].push(drawnCard);
+    }
+  
+    return newState;
+  }
 
 function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: Card[] }): string {
   const players = Object.keys(playerHands);
@@ -118,5 +118,5 @@ function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: 
 }
 
 export function hashState(state: OffChainGameState): string {
-  return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(state)));
+    return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(state)))
 }

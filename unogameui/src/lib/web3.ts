@@ -30,7 +30,7 @@ export async function getContract() {
       const address = await signer.getAddress()
       console.log(address)
 
-      const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0'
+      const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1'
       if (!contractAddress) {
         throw new Error('Contract address is not set');
       }
