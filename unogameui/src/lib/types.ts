@@ -21,7 +21,7 @@ export interface OnChainGameState {
   players: string[];
   isActive: boolean;
   currentPlayerIndex: number;
-  initialStateHash: string;
+  stateHash: string;
   lastActionTimestamp: number;
   turnCount: number;
   directionClockwise: boolean;

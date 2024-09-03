@@ -46,7 +46,7 @@ export function verifyOffChainState(offChainState: OffChainGameState, onChainSta
 
   // Verify initial state hash
   const initialStateHash = hashState(offChainState);
-  if (initialStateHash !== onChainState.initialStateHash) return false;
+  if (initialStateHash !== onChainState.stateHash) return false;
 
   return true;
 }

@@ -61,8 +61,8 @@ export default function Game() {
 
         const reconstructedHash = hashState(offChainState)
         console.log('Reconstructed hash:', reconstructedHash)
-        console.log('On-chain hash:', onChainState.initialStateHash)
-        if (reconstructedHash !== onChainState.initialStateHash) {
+        console.log('On-chain hash:', onChainState.stateHash)
+        if (reconstructedHash !== onChainState.stateHash) {
             const errorMessage = 'Reconstructed state does not match on-chain hash'
             console.error(errorMessage)
             setStateMismatchError(errorMessage)
