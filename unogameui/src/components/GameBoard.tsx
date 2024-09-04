@@ -10,12 +10,20 @@ interface GameBoardProps {
 
 export default function GameBoard({ currentCardHash, players, currentPlayerIndex }: GameBoardProps) {
     const currentCard = getCardFromHash(currentCardHash)
+    console.log('Current card:', currentCard);
+
+    if (!currentCard) {
+        console.error('Failed to retrieve current card from hash:', currentCardHash);
+      }
+
   return (
     <div className="flex flex-col items-center">
       {currentCard ? (
         <Card card={currentCard} />
       ) : (
-        <div>Unknown card</div>
+        <div className="w-20 h-32 rounded-lg bg-gray-300 flex items-center justify-center">
+          No card
+        </div>
       )}
       <div className="mt-4">
         {players.map((player, index) => (

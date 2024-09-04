@@ -36,19 +36,36 @@ export default function Game() {
         console.log('Game ID: ', bigIntId)
         await fetchGameState(contract, bigIntId, account)
       }
-      if (playerToStart) {
-        console.log('Player to start (from state): ', playerToStart)
-      }
     }
     setup()
-  }, [id, playerToStart])
+  }, [id])
+
+  useEffect(() => {
+    if (playerToStart) {
+      console.log('Player to start (from state): ', playerToStart)
+    }
+  }, [playerToStart])
 
   const fetchGameState = async (contract: UnoGameContract, gameId: bigint, account: string) => {
     try {
       const onChainGameState = await contract.getGameState(gameId)
       setOnChainGameState(onChainGameState)
       console.log('On Chain Game state: ', onChainGameState)
+      
       let offChainGameState = initializeOffChainState(gameId, onChainGameState.players)
+      
+      if (onChainGameState.isStarted) {
+        offChainGameState.playerHands = {};
+        for (const player of onChainGameState.players) {
+            const playerHand = getPlayerHand(gameId, account);
+            offChainGameState.playerHands[player] = playerHand;
+            if (player === account) {
+                setPlayerHand(playerHand);
+                console.log('Current player hand (hashes):', playerHand);
+            }
+        }
+      }
+      
       setOffChainGameState(offChainGameState)
       console.log('Off chain game state: ',offChainGameState)
       
@@ -73,6 +90,7 @@ export default function Game() {
     if (!contract || !account || !offChainGameState || !gameId) return
 
     const newState = startGame(offChainGameState)
+    console.log('New State:', newState)
     const startingPlayer = newState.players[newState.currentPlayerIndex]    
     console.log('Player chosen to start: ',startingPlayer)
     setPlayerToStart(startingPlayer)
@@ -86,13 +104,21 @@ export default function Game() {
       //setOffChainGameState(newState)
 
       // Store the player's hand locally
-      const playerHandHashes = newState.playerHands[account]
-      storePlayerHand(gameId, account, playerHandHashes)
-      setPlayerHand(getPlayerHand(gameId, account))
+      for (const player of newState.players) {
+        const playerHandHashes = newState.playerHands[player];
+        storePlayerHand(gameId, account, playerHandHashes)
+        console.log('Player Hands: ', playerHandHashes)
+        console.log(`Stored hand for player ${player}:`, playerHandHashes);
+      }
+      setOffChainGameState(newState);
+      const currentPlayerHandHashes = newState.playerHands[account];
+      setPlayerHand(currentPlayerHandHashes);
+      console.log('Current player hand set:', currentPlayerHandHashes);
+      //setPlayerHand(getPlayerHand(gameId, account))
 
       const optimisticUpdate = applyActionToOffChainState(newState, action)
       setOffChainGameState(optimisticUpdate)
-      setPlayerHand(getPlayerHand(gameId, account))
+      //setPlayerHand(getPlayerHand(gameId, account))
     } catch (error) {
       console.error('Error starting game:', error)
       setError('Failed to start game. Please try again.')
@@ -177,7 +203,9 @@ export default function Game() {
                                 currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
                                 />
                             <PlayerHand
-                                hand={getPlayerHand(gameId!, account!)}
+                                //hand={getPlayerHand(gameId!, account!)}
+                                //hand={offChainGameState.playerHands[account!] || []}
+                                hand={playerHand}
                                 onCardPlay={playCard}
                                 />
                             <button

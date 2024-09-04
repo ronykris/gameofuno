@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { Card, CardColor, CardValue, OffChainGameState, Action } from './types';
+import CryptoJS from 'crypto-js';
 
 const COLORS: CardColor[] = ['red', 'blue', 'green', 'yellow'];
 const VALUES: CardValue[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
@@ -241,6 +242,7 @@ export function hashAction(action: Action): string {
 
   export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
     const key = `game_${gameId}_player_${playerAddress}`;
+    console.log('Storing player hand:', { gameId, playerAddress, handHashes });
     const hand = handHashes.map(hash => getCardFromHash(hash)).filter(card => card !== undefined) as Card[];
     const encryptedHand = encryptHand(hand, gameId, playerAddress);
     localStorage.setItem(key, encryptedHand);
@@ -248,10 +250,12 @@ export function hashAction(action: Action): string {
   
   export function getPlayerHand(gameId: bigint, playerAddress: string): string[] {
     const key = `game_${gameId}_player_${playerAddress}`;
-    const encryptedHand = localStorage.getItem(key);
+    const encryptedHand = localStorage.getItem(key);    
     if (encryptedHand) {
+        console.log('Retrieved encrypted hand for player:', playerAddress);
         return decryptHand(encryptedHand, gameId, playerAddress);
     }
+    console.log('No hand found for player:', playerAddress);
     return [];
   }
 
@@ -262,7 +266,10 @@ export function hashAction(action: Action): string {
   }
 
   export function getCardFromHash(cardHash: string): Card | undefined {
-    return cardHashMap.get(cardHash);
+    console.log('Getting card for hash:', cardHash);
+    const card = cardHashMap.get(cardHash);
+    console.log('Retrieved card:', card);
+    return card;
   }
 
   

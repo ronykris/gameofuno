@@ -8,10 +8,12 @@ interface PlayerHandProps {
 }
 
 export default function PlayerHand({ hand, onCardPlay }: PlayerHandProps) {
+  console.log('Player hand (hashes):', hand);
   return (
     <div className="flex flex-wrap gap-2">
       {hand.map((cardHash, index) => {
         const card = getCardFromHash(cardHash)
+        console.log(`Card ${index}:`, { hash: cardHash, card });
         return card ? (
           <Card 
             key={cardHash}
@@ -19,7 +21,9 @@ export default function PlayerHand({ hand, onCardPlay }: PlayerHandProps) {
             onClick={() => onCardPlay(cardHash)} 
           />
         ) : (
-          <div key={cardHash}>Unknown card</div>
+          <div key={cardHash} className="w-20 h-32 rounded-lg bg-gray-300 flex items-center justify-center">
+            Unknown
+          </div>
         )
       })}
     </div>
