@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ethers } from 'ethers'
 import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../../lib/types'
-import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand } from '../../../lib/gameLogic'
+import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand, getPlayerHand } from '../../../lib/gameLogic'
 import { getContract } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
-import { reconstructActionFromHash } from '@/lib/stateManagement'
+//import { reconstructActionFromHash } from '@/lib/stateManagement'
 
 
 export default function Game() {
@@ -36,9 +36,12 @@ export default function Game() {
         console.log('Game ID: ', bigIntId)
         await fetchGameState(contract, bigIntId, account)
       }
+      if (playerToStart) {
+        console.log('Player to start (from state): ', playerToStart)
+      }
     }
     setup()
-  }, [id])
+  }, [id, playerToStart])
 
   const fetchGameState = async (contract: UnoGameContract, gameId: bigint, account: string) => {
     try {
@@ -70,9 +73,9 @@ export default function Game() {
     if (!contract || !account || !offChainGameState || !gameId) return
 
     const newState = startGame(offChainGameState)
-    const startingPlayer = onChainGameState?.players[newState.currentPlayerIndex]
-    console.log(startingPlayer)
-    setPlayerToStart(startingPlayer!)
+    const startingPlayer = newState.players[newState.currentPlayerIndex]    
+    console.log('Player chosen to start: ',startingPlayer)
+    setPlayerToStart(startingPlayer)
     console.log('Player to start: ', playerToStart)
     const action: Action = { type: 'startGame', player: account }
     const actionHash = hashAction(action)
@@ -80,12 +83,16 @@ export default function Game() {
     try {
       const tx = await contract.startGame(gameId, newState.stateHash)
       await tx.wait()
-      setOffChainGameState(newState)
+      //setOffChainGameState(newState)
 
       // Store the player's hand locally
-      const playerHand = newState.playerHands[account]
-      storePlayerHand(gameId, account, playerHand)
-      setPlayerHand(playerHand)
+      const playerHandHashes = newState.playerHands[account]
+      storePlayerHand(gameId, account, playerHandHashes)
+      setPlayerHand(getPlayerHand(gameId, account))
+
+      const optimisticUpdate = applyActionToOffChainState(newState, action)
+      setOffChainGameState(optimisticUpdate)
+      setPlayerHand(getPlayerHand(gameId, account))
     } catch (error) {
       console.error('Error starting game:', error)
       setError('Failed to start game. Please try again.')
@@ -156,25 +163,27 @@ export default function Game() {
             {offChainGameState && !offChainGameState.isStarted && (
                 <button onClick={handleStartGame} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4" >Start Game</button>
             )}
-            {offChainGameState && offChainGameState && (
-                <>
-                 
-                  <GameBoard
-                  currentCard={offChainGameState.lastPlayedCard!}
-                  players={onChainGameState.players}
-                  currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
-                />
-                <PlayerHand
-                  hand={offChainGameState.playerHands[account]}
-                  onCardPlay={playCard}
-                />
-                <button
-                  onClick={drawCard}
-                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  disabled={canPlay(offChainGameState.playerHands[account], offChainGameState.currentColor, offChainGameState.currentValue)}
-                >
-                  Draw Card
-                </button>
+            {playerToStart && (
+                <div>Starting Player: {playerToStart}</div>
+            )}
+            {offChainGameState && offChainGameState.isStarted && (
+                <>                 
+                    <GameBoard
+                        currentCardHash={offChainGameState.lastPlayedCardHash!}
+                        players={onChainGameState.players}
+                        currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
+                    />
+                    <PlayerHand
+                        hand={offChainGameState.playerHands[account]}
+                        onCardPlay={playCard}
+                    />
+                    <button
+                        onClick={drawCard}
+                        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                        disabled={canPlay(getPlayerHand(gameId!, account), offChainGameState.currentColor!, offChainGameState.currentValue!)}
+                    >
+                        Draw Card
+                    </button>
                 {pendingActions.length > 0 && (
               <div className="mt-4">
                 <h2 className="text-xl font-bold">Pending Actions:</h2>

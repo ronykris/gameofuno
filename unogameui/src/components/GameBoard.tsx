@@ -1,16 +1,22 @@
 import { Card as CardType } from '../lib/types'
 import Card from './Card'
+import { getCardFromHash } from '../lib/gameLogic'
 
 interface GameBoardProps {
-  currentCard: CardType
-  players: string[]
-  currentPlayerIndex: number
+    currentCardHash: string
+    players: string[]
+    currentPlayerIndex: number
 }
 
-export default function GameBoard({ currentCard, players, currentPlayerIndex }: GameBoardProps) {
+export default function GameBoard({ currentCardHash, players, currentPlayerIndex }: GameBoardProps) {
+    const currentCard = getCardFromHash(currentCardHash)
   return (
     <div className="flex flex-col items-center">
-      <Card card={currentCard} />
+      {currentCard ? (
+        <Card card={currentCard} />
+      ) : (
+        <div>Unknown card</div>
+      )}
       <div className="mt-4">
         {players.map((player, index) => (
           <div key={player} className={`${index === currentPlayerIndex ? 'font-bold' : ''}`}>

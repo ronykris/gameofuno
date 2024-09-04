@@ -4,6 +4,8 @@ import { Card, CardColor, CardValue, OffChainGameState, Action } from './types';
 const COLORS: CardColor[] = ['red', 'blue', 'green', 'yellow'];
 const VALUES: CardValue[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
 
+let cardHashMap: Map<string, Card> = new Map();
+
 export function isValidPlay(card: Card, { currentColor, currentValue }: { currentColor: CardColor; currentValue: CardValue }): boolean {
   if (card.color === 'wild') return true;
   if (card.color === currentColor) return true;
@@ -65,6 +67,7 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
       turnCount: BigInt(0),
       directionClockwise: true,
       playerHandsHash: {},
+      playerHands: {},
       deckHash: '',
       discardPileHash: '',
       currentColor: null,
@@ -83,22 +86,37 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
     const deck = shuffleDeck(createDeck(), Number(state.id));
     console.log(deck)
     
-    // Deal cards
+    cardHashMap.clear()
+
+    // Deal hands
     newState.playerHandsHash = {};
+    newState.playerHands = {};
     state.players.forEach(player => {
       const hand = deck.splice(0, 7);
+      const handHashes = hand.map(card => {
+        const hash = hashCard(card);
+        cardHashMap.set(hash, card);
+        return hash;
+      });
       newState.playerHandsHash[player] = hashCards(hand);
+      newState.playerHands[player] = handHashes;
     });
   
     // Set up discard pile
     const firstCard = deck.pop()!;
+    const firstCardHash = hashCard(firstCard);
+    cardHashMap.set(firstCardHash, firstCard);
     newState.discardPileHash = hashCards([firstCard]);
     newState.currentColor = firstCard.color;
     newState.currentValue = firstCard.value;
-    newState.lastPlayedCardHash = hashCard(firstCard);
+    newState.lastPlayedCardHash = firstCardHash;
   
     // Hash remaining deck
     newState.deckHash = hashCards(deck);
+    deck.forEach(card => {
+        const hash = hashCard(card);
+        cardHashMap.set(hash, card);
+    });
   
     // Randomly choose first player
     newState.currentPlayerIndex = Math.floor(Math.random() * state.players.length);
@@ -112,19 +130,31 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
   export function applyActionToOffChainState(state: OffChainGameState, action: Action): OffChainGameState {
     const newState = { ...state };
   
-    // Highlight start
     switch (action.type) {
       case 'startGame':
         return startGame(state);
       case 'playCard':
-        // Implementation depends on how you want to handle card playing with hashed states
+        if (action.cardHash) {
+            const playerHand = newState.playerHands[action.player];
+            const cardIndex = playerHand.indexOf(action.cardHash);
+            if (cardIndex !== -1) {
+                playerHand.splice(cardIndex, 1);
+            }
+            // Update discard pile
+            newState.discardPileHash = action.cardHash;
+            newState.lastPlayedCardHash = action.cardHash;
+            const playedCard = getCardFromHash(action.cardHash);
+            if (playedCard) {
+                newState.currentColor = playedCard.color;
+                newState.currentValue = playedCard.value;
+            }
+        }
         break;
       case 'drawCard':
         // Implementation depends on how you want to handle card drawing with hashed states
         break;
     }
-    // Highlight end
-  
+      
     newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
     newState.turnCount++;
     newState.lastActionTimestamp = BigInt(Math.floor(Date.now() / 1000));
@@ -193,9 +223,21 @@ export function hashAction(action: Action): string {
     return ethers.keccak256(encodedCards);
   }
 
-  export function storePlayerHand(gameId: bigint, playerAddress: string, hand: Card[]): void {
+  function encryptHand(hand: Card[], gameId: bigint, playerAddress: string): string {
+    const key = `${gameId}_${playerAddress}`;
+    return CryptoJS.AES.encrypt(JSON.stringify(hand), key).toString();
+  }
+
+  function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): Card[] {
+    const key = `${gameId}_${playerAddress}`;
+    const bytes = CryptoJS.AES.decrypt(encryptedHand, key);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  }
+
+  export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
     const key = `game_${gameId}_player_${playerAddress}`;
-    const encryptedHand = JSON.stringify(hand); // In a real implementation, encrypt this data
+    const hand = handHashes.map(hash => getCardFromHash(hash)).filter(card => card !== undefined) as Card[];
+    const encryptedHand = encryptHand(hand, gameId, playerAddress);
     localStorage.setItem(key, encryptedHand);
   }
   
@@ -203,7 +245,13 @@ export function hashAction(action: Action): string {
     const key = `game_${gameId}_player_${playerAddress}`;
     const encryptedHand = localStorage.getItem(key);
     if (encryptedHand) {
-      return JSON.parse(encryptedHand); // In a real implementation, decrypt this data
+        return decryptHand(encryptedHand, gameId, playerAddress);
     }
     return [];
   }
+
+  export function getCardFromHash(hash: string): Card | undefined {
+    return cardHashMap.get(hash);
+  }
+
+  

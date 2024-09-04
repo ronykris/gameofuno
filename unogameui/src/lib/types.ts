@@ -17,6 +17,7 @@ export interface OffChainGameState {
     turnCount: bigint;
     directionClockwise: boolean;
     playerHandsHash: { [address: string]: string };
+    playerHands: { [address: string]: string[] };
     deckHash: string;
     discardPileHash: string;
     currentColor: CardColor | null;
