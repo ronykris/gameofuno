@@ -6,15 +6,20 @@ const VALUES: CardValue[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '
 
 let cardHashMap: Map<string, Card> = new Map();
 
-export function isValidPlay(card: Card, { currentColor, currentValue }: { currentColor: CardColor; currentValue: CardValue }): boolean {
-  if (card.color === 'wild') return true;
-  if (card.color === currentColor) return true;
-  if (card.value === currentValue) return true;
-  return false;
+export function isValidPlay(cardHash: string, { currentColor, currentValue }: { currentColor: CardColor; currentValue: CardValue }): boolean {
+    const card = getCardFromHash(cardHash);
+    if (!card) return false;
+    if (card.color === 'wild') return true;
+    if (card.color === currentColor) return true;
+    if (card.value === currentValue) return true;
+    return false;
 }
 
-export function canPlay(hand: Card[], currentColor: CardColor, currentValue: CardValue): boolean {
-  return hand.some(card => isValidPlay(card, { currentColor, currentValue }));
+export function canPlay(handHashes: string[], currentColor: CardColor, currentValue: CardValue): boolean {
+    return handHashes.some(cardHash => {
+        const card = getCardFromHash(cardHash);
+        return card ? isValidPlay(cardHash, { currentColor, currentValue }) : false;
+      });
 }
 
 export function createDeck(): Card[] {
@@ -228,7 +233,7 @@ export function hashAction(action: Action): string {
     return CryptoJS.AES.encrypt(JSON.stringify(hand), key).toString();
   }
 
-  function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): Card[] {
+  function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): string[] {
     const key = `${gameId}_${playerAddress}`;
     const bytes = CryptoJS.AES.decrypt(encryptedHand, key);
     return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
@@ -241,7 +246,7 @@ export function hashAction(action: Action): string {
     localStorage.setItem(key, encryptedHand);
   }
   
-  export function getPlayerHand(gameId: bigint, playerAddress: string): Card[] {
+  export function getPlayerHand(gameId: bigint, playerAddress: string): string[] {
     const key = `game_${gameId}_player_${playerAddress}`;
     const encryptedHand = localStorage.getItem(key);
     if (encryptedHand) {
@@ -250,8 +255,14 @@ export function hashAction(action: Action): string {
     return [];
   }
 
-  export function getCardFromHash(hash: string): Card | undefined {
-    return cardHashMap.get(hash);
+  // This function should be used when you need to get the actual Card objects
+  export function getPlayerHandCards(gameId: bigint, playerAddress: string): Card[] {
+    const hashes = getPlayerHand(gameId, playerAddress);
+    return hashes.map(hash => getCardFromHash(hash)).filter((card): card is Card => card !== undefined);
+  }
+
+  export function getCardFromHash(cardHash: string): Card | undefined {
+    return cardHashMap.get(cardHash);
   }
 
   

@@ -21,7 +21,7 @@ export default function Game() {
   const [pendingActions, setPendingActions] = useState<{action: any, txHash: string}[]>([])
   const [stateMismatchError, setStateMismatchError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [playerHand, setPlayerHand] = useState<Card[]>([])
+  const [playerHand, setPlayerHand] = useState<string[]>([])
   const [playerToStart, setPlayerToStart] = useState<string | null>(null)
 
   useEffect(() => {
@@ -160,46 +160,53 @@ export default function Game() {
                 <span className="block sm:inline">{stateMismatchError}</span>
             </div>
             )}
-            {offChainGameState && !offChainGameState.isStarted && (
-                <button onClick={handleStartGame} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4" >Start Game</button>
-            )}
             {playerToStart && (
                 <div>Starting Player: {playerToStart}</div>
             )}
-            {offChainGameState && offChainGameState.isStarted && (
-                <>                 
-                    <GameBoard
-                        currentCardHash={offChainGameState.lastPlayedCardHash!}
-                        players={onChainGameState.players}
-                        currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
-                    />
-                    <PlayerHand
-                        hand={offChainGameState.playerHands[account]}
-                        onCardPlay={playCard}
-                    />
-                    <button
-                        onClick={drawCard}
-                        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        disabled={canPlay(getPlayerHand(gameId!, account), offChainGameState.currentColor!, offChainGameState.currentValue!)}
-                    >
-                        Draw Card
+            {offChainGameState && onChainGameState && (
+            <>
+                {!offChainGameState.isStarted && !onChainGameState.isStarted ? (
+                    <button onClick={handleStartGame} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4">
+                        Start Game
                     </button>
-                {pendingActions.length > 0 && (
-              <div className="mt-4">
-                <h2 className="text-xl font-bold">Pending Actions:</h2>
-                <ul>
-                  {pendingActions.map((action, index) => (
-                    <li key={index}>
-                      {action.action.card ? `Playing ${action.action.card.color} ${action.action.card.value}` : 'Drawing a card'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                    ) : (
+                        <>
+                            <GameBoard
+                                currentCardHash={offChainGameState.lastPlayedCardHash!}
+                                players={onChainGameState.players}
+                                currentPlayerIndex={Number(onChainGameState.currentPlayerIndex)}
+                                />
+                            <PlayerHand
+                                hand={getPlayerHand(gameId!, account!)}
+                                onCardPlay={playCard}
+                                />
+                            <button
+                                onClick={drawCard}
+                                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                disabled={canPlay(getPlayerHand(gameId!, account!), offChainGameState.currentColor!, offChainGameState.currentValue!)}
+                            >
+                                Draw Card
+                            </button>
+                            {pendingActions.length > 0 && (
+                                <div className="mt-4">
+                                    <h2 className="text-xl font-bold">Pending Actions:</h2>
+                                    <ul>
+                                        {pendingActions.map((action, index) => (
+                                        <li key={index}>
+                                            {action.action.type === 'playCard' 
+                                                ? `Playing card ${action.action.cardHash}` 
+                                                : action.action.type === 'drawCard' 
+                                                ? 'Drawing a card' 
+                                                : 'Unknown action'}
+                                        </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </>
-                
-            )}
-        
+            )}        
         </div>
     )
 }

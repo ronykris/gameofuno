@@ -14,7 +14,7 @@ export default function PlayerHand({ hand, onCardPlay }: PlayerHandProps) {
         const card = getCardFromHash(cardHash)
         return card ? (
           <Card 
-            key={cardHash} 
+            key={cardHash}
             card={card} 
             onClick={() => onCardPlay(cardHash)} 
           />
