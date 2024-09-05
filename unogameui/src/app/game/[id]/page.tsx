@@ -56,16 +56,13 @@ export default function Game() {
       
       if (onChainGameState.isStarted) {
         offChainGameState.playerHands = {};
-        for (const player of onChainGameState.players) {
-            const playerHand = getPlayerHand(gameId, account);
-            offChainGameState.playerHands[player] = playerHand;
-            if (player === account) {
-                setPlayerHand(playerHand);
-                console.log('Current player hand (hashes):', playerHand);
-            }
-        }
+        //for (const player of onChainGameState.players) {
+        const playerHand = getPlayerHand(gameId, account);
+        //offChainGameState.playerHands[player] = playerHand;
+        //if (player === account) {
+        setPlayerHand(playerHand);
+        console.log('Current player hand (hashes):', playerHand);
       }
-      
       setOffChainGameState(offChainGameState)
       console.log('Off chain game state: ',offChainGameState)
       
