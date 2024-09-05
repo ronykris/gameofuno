@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, MutableRefObject } from 'react'
 import { useRouter } from 'next/navigation'
 import { getContract } from '../lib/web3'
 import { UnoGameContract } from '../lib/types'
 import { ethers } from 'ethers'
 
-export default function Lobby() {
+export default function Lobby({socket}:{socket: MutableRefObject<any>}) {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<UnoGameContract | null>(null)
   const [games, setGames] = useState<BigInt[]>([])
