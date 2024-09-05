@@ -137,10 +137,17 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
 
   if (socket && socket.current) {
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
-    socket.current.emit('gameStarted', cardHashMapObject);
+    socket.current.emit('gameStarted', {
+      cardHashMap: cardHashMapObject,
+      newState,
+      roomId: state.id.toString() // Assuming the game ID can be used as the room ID
+    });
 
-    socket.current.on('receiveCardHashMap', (newCardHashMap: Record<string, Card>) => {
-      updateGlobalCardHashMap(newCardHashMap);
+    socket.current.on('receiveGameStart', (data: { cardHashMap: Record<string, Card>, newState: OffChainGameState }) => {
+      updateGlobalCardHashMap(data.cardHashMap);
+      // Here you might want to update the local game state with the received newState
+      // This depends on how you're managing state in your application
+      console.log('Received new game state:', data.newState);
     });
   }
 

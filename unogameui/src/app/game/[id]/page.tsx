@@ -8,12 +8,11 @@ import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initialize
 import { getContract } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
-import { io } from 'socket.io-client'
+import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
 //import { reconstructActionFromHash } from '@/lib/stateManagement'
 
 const CONNECTION = 'localhost:4000';
-
 
 export default function Game() {
   const { id } = useParams()
@@ -28,16 +27,39 @@ export default function Game() {
   const [playerHand, setPlayerHand] = useState<string[]>([])
   const [playerToStart, setPlayerToStart] = useState<string | null>(null)
 
-  const socket = useRef();
+  const socket = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!socket.current) {
       socket.current = io(CONNECTION, {
         transports: ["websocket"],
-      }) as any; // Type assertion to fix the type mismatch
+      });
+
+      // Join the game room
+      if (id && socket.current) {
+        const roomId = `game-${id}`;
+        socket.current.emit('joinGame', id);
+        console.log(`Joined game room: ${roomId}`);
+
+        // Add listener for receiveGameStart
+        socket.current.on('receiveGameStart', (data) => {
+          if (account && gameId) {
+            const playerDeck = data.playerHands[account];
+            storePlayerHand(gameId, account, playerDeck);
+            setPlayerHand(playerDeck);
+            console.log('Stored player hand:', playerDeck);
+          }
+        });
+      }
     }
 
-  }, [socket]);
+    // Cleanup function
+    return () => {
+      if (socket.current) {
+        socket.current.off('receiveGameStart');
+      }
+    };
+  }, [id, account, gameId]);
 
   useEffect(() => {
     const setup = async () => {
