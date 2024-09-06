@@ -41,14 +41,19 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("userJoined", socket.id);
     });
 
-    socket.on("gameStarted", (data) => {
-        const { cardHashMap, newState, roomId } = data;
+    // Add game room creation handler
+    socket.on("createGameRoom", () => {
+        console.log(`Game room created by user`);
+        io.emit("gameRoomCreated");
+    });
+
+    socket.on('gameStarted', (data) => {
+        const { newState, cardHashMap, roomId } = data;
         console.log(`Game started in room ${roomId}`);
-        console.log(cardHashMap);
-        console.log(newState);
-        
-        // Broadcast cardHashMap and newState to all other connected sockets in the room
-        socket.to(roomId).emit("receiveGameStart", { cardHashMap, newState });
+        console.log(newState)
+
+        // Emit the gameStarted event to all clients in the room with a room-specific event name
+        io.to(roomId).emit(`gameStarted-${roomId}`, { newState, cardHashMap });
     });
 
     // Add leave room functionality

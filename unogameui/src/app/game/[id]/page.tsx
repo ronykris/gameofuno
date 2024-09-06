@@ -17,6 +17,7 @@ const CONNECTION = 'localhost:4000';
 export default function Game() {
   const { id } = useParams()
   const [gameId, setGameId] = useState<bigint | null>(null)
+  const accountRef = useRef<string | null>(null);
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<UnoGameContract | null>(null)
   const [onChainGameState, setOnChainGameState] = useState<OnChainGameState | null>(null)
@@ -29,6 +30,11 @@ export default function Game() {
 
   const socket = useRef<Socket | null>(null);
 
+  // Update accountRef whenever account changes
+  useEffect(() => {
+    accountRef.current = account;
+  }, [account]);
+
   useEffect(() => {
     if (!socket.current) {
       socket.current = io(CONNECTION, {
@@ -38,17 +44,30 @@ export default function Game() {
       // Join the game room
       if (id && socket.current) {
         const roomId = `game-${id}`;
-        socket.current.emit('joinGame', id);
+        socket.current.emit('joinRoom', roomId);
         console.log(`Joined game room: ${roomId}`);
 
-        // Add listener for receiveGameStart
-        socket.current.on('receiveGameStart', (data) => {
-          if (account && gameId) {
-            const playerDeck = data.playerHands[account];
-            storePlayerHand(gameId, account, playerDeck);
-            setPlayerHand(playerDeck);
-            console.log('Stored player hand:', playerDeck);
+        // Listen for gameStarted event for this specific room
+        socket.current.on(`gameStarted-${roomId}`, (data) => {
+          console.log(`Game started event received for room ${roomId}:`, data);
+          const { newState, cardHashMap } = data;
+
+          // Update the global card hash map
+          updateGlobalCardHashMap(cardHashMap);
+
+          // Update the game state
+          setOffChainGameState(newState);
+
+          // Update player hand
+          if (accountRef.current) {
+            console.log('Account: ', account)
+            const playerHandHashes = newState.playerHands[accountRef.current];
+            setPlayerHand(playerHandHashes);
+            storePlayerHand(BigInt(id as string), accountRef.current, playerHandHashes);
           }
+
+          // Update other relevant state
+          setPlayerToStart(newState.players[newState.currentPlayerIndex]);
         });
       }
     }
@@ -59,7 +78,7 @@ export default function Game() {
         socket.current.off('receiveGameStart');
       }
     };
-  }, [id, account, gameId]);
+  }, [id, gameId, socket]);
 
   useEffect(() => {
     const setup = async () => {
@@ -148,16 +167,16 @@ export default function Game() {
       //setOffChainGameState(newState)
 
       // Store the player's hand locally
-      for (const player of newState.players) {
-        const playerHandHashes = newState.playerHands[player];
-        storePlayerHand(gameId, account, playerHandHashes)
-        console.log('Player Hands: ', playerHandHashes)
-        console.log(`Stored hand for player ${player}:`, playerHandHashes);
-      }
-      setOffChainGameState(newState);
-      const currentPlayerHandHashes = newState.playerHands[account];
-      setPlayerHand(currentPlayerHandHashes);
-      console.log('Current player hand set:', currentPlayerHandHashes);
+      // for (const player of newState.players) {
+      //   const playerHandHashes = newState.playerHands[player];
+      //   storePlayerHand(gameId, account, playerHandHashes)
+      //   console.log('Player Hands: ', playerHandHashes)
+      //   console.log(`Stored hand for player ${player}:`, playerHandHashes);
+      // }
+      // setOffChainGameState(newState);
+      // const currentPlayerHandHashes = newState.playerHands[account];
+      // setPlayerHand(currentPlayerHandHashes);
+      // console.log('Current player hand set:', currentPlayerHandHashes);
       //setPlayerHand(getPlayerHand(gameId, account))
 
       const optimisticUpdate = applyActionToOffChainState(newState, action)

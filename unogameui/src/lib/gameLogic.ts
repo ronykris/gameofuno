@@ -87,6 +87,19 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
   return initialState;
 }
 
+function convertBigIntsToStrings(obj: any): any {
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  } else if (Array.isArray(obj)) {
+    return obj.map(convertBigIntsToStrings);
+  } else if (typeof obj === 'object' && obj !== null) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [key, convertBigIntsToStrings(value)])
+    );
+  }
+  return obj;
+}
+
 export function startGame(state: OffChainGameState, socket?: MutableRefObject<any>): OffChainGameState {
   const newState = { ...state };
   const deck = shuffleDeck(createDeck(), Number(state.id));
@@ -137,17 +150,12 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
 
   if (socket && socket.current) {
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
+    const roomId = `game-${state.id.toString()}`;
+    
     socket.current.emit('gameStarted', {
+      newState: convertBigIntsToStrings(newState),
       cardHashMap: cardHashMapObject,
-      newState,
-      roomId: state.id.toString() // Assuming the game ID can be used as the room ID
-    });
-
-    socket.current.on('receiveGameStart', (data: { cardHashMap: Record<string, Card>, newState: OffChainGameState }) => {
-      updateGlobalCardHashMap(data.cardHashMap);
-      // Here you might want to update the local game state with the received newState
-      // This depends on how you're managing state in your application
-      console.log('Received new game state:', data.newState);
+      roomId: roomId
     });
   }
 
@@ -288,6 +296,7 @@ export function getPlayerHandCards(gameId: bigint, playerAddress: string): Card[
 
 export function getCardFromHash(cardHash: string): Card | undefined {
   console.log('Getting card for hash:', cardHash);
+  console.log('Global cardHashMap:', getGlobalCardHashMap());
   const card = getCardFromGlobalHashMap(cardHash);
   console.log('Retrieved card:', card);
   return card;
