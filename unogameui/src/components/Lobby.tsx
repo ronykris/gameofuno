@@ -1,16 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, MutableRefObject } from 'react'
 import { useRouter } from 'next/navigation'
 import { getContract } from '../lib/web3'
 import { UnoGameContract } from '../lib/types'
 import { ethers } from 'ethers'
 
-export default function Lobby() {
+export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<UnoGameContract | null>(null)
   const [games, setGames] = useState<BigInt[]>([])
   const router = useRouter()
+
+  const fetchGames = async () => {
+    if (contract) {
+      try {
+        console.log('Fetching active games...')
+        const activeGames = await contract.getActiveGames()
+        console.log('Active games:', activeGames)
+        setGames(activeGames)
+      } catch (error) {
+        console.error('Failed to fetch games:', error)
+      }
+    }
+  }
 
   useEffect(() => {
     const setup = async () => {
@@ -23,13 +36,31 @@ export default function Lobby() {
       }
     }
     setup()
+
   }, [])
 
   useEffect(() => {
     if (contract) {
-      fetchGames()
+      console.log("Contract initialized, calling fetchGames"); // Add this line
+      fetchGames();
+
+      if (socket.current) {
+        console.log("Socket connection established");
+        // Add listener for gameRoomCreated event
+        socket.current.on("gameRoomCreated", () => {
+          console.log("Game room created event received"); // Add this line
+          fetchGames();
+        });
+
+        // Cleanup function
+        return () => {
+          socket.current.off("gameRoomCreated");
+        };
+      }
+    } else {
+      console.log("Contract not initialized yet"); // Add this line
     }
-  }, [contract])
+  }, [contract, socket])
 
   const createGame = async () => {
     if (contract) {
@@ -39,6 +70,11 @@ export default function Lobby() {
         console.log('Transaction hash:', tx.hash)
         await tx.wait()
         console.log('Game created successfully')
+
+        if (socket && socket.current) {
+          socket.current.emit("createGameRoom");
+        }
+
         fetchGames()
       } catch (error) {
         console.error('Failed to create game:', error)
@@ -55,22 +91,9 @@ export default function Lobby() {
         console.log('Transaction hash:', tx.hash)
         await tx.wait()
         console.log('Joined game successfully')
-        router.push(`/game/${gameId.toString()}`)   
+        router.push(`/game/${gameId.toString()}`)
       } catch (error) {
         console.error('Failed to join game:', error)
-      }
-    }
-  }
-
-  const fetchGames = async () => {
-    if (contract) {
-      try {
-        console.log('Fetching active games...')
-        const activeGames = await contract.getActiveGames()
-        console.log('Active games:', activeGames)
-        setGames(activeGames)
-      } catch (error) {
-        console.error('Failed to fetch games:', error)
       }
     }
   }

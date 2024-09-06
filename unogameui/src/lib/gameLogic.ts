@@ -1,26 +1,26 @@
 import { ethers } from 'ethers';
 import { Card, CardColor, CardValue, OffChainGameState, Action } from './types';
 import CryptoJS from 'crypto-js';
+import { MutableRefObject } from 'react';
+import { updateGlobalCardHashMap, getGlobalCardHashMap, getCardFromGlobalHashMap } from './globalState';
 
 const COLORS: CardColor[] = ['red', 'blue', 'green', 'yellow'];
 const VALUES: CardValue[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
 
-let cardHashMap: Map<string, Card> = new Map();
-
 export function isValidPlay(cardHash: string, { currentColor, currentValue }: { currentColor: CardColor; currentValue: CardValue }): boolean {
-    const card = getCardFromHash(cardHash);
-    if (!card) return false;
-    if (card.color === 'wild') return true;
-    if (card.color === currentColor) return true;
-    if (card.value === currentValue) return true;
-    return false;
+  const card = getCardFromHash(cardHash);
+  if (!card) return false;
+  if (card.color === 'wild') return true;
+  if (card.color === currentColor) return true;
+  if (card.value === currentValue) return true;
+  return false;
 }
 
 export function canPlay(handHashes: string[], currentColor: CardColor, currentValue: CardValue): boolean {
-    return handHashes.some(cardHash => {
-        const card = getCardFromHash(cardHash);
-        return card ? isValidPlay(cardHash, { currentColor, currentValue }) : false;
-      });
+  return handHashes.some(cardHash => {
+    const card = getCardFromHash(cardHash);
+    return card ? isValidPlay(cardHash, { currentColor, currentValue }) : false;
+  });
 }
 
 export function createDeck(): Card[] {
@@ -64,111 +64,140 @@ export function shuffleDeck(deck: Card[], seed: number): Card[] {
 }
 
 export function initializeOffChainState(gameId: bigint, players: string[]): OffChainGameState {
-    const initialState: OffChainGameState = {
-      id: gameId,
-      players,
-      isActive: true,
-      currentPlayerIndex: 0,
-      lastActionTimestamp: BigInt(Math.floor(Date.now() / 1000)),
-      turnCount: BigInt(0),
-      directionClockwise: true,
-      playerHandsHash: {},
-      playerHands: {},
-      deckHash: '',
-      discardPileHash: '',
-      currentColor: null,
-      currentValue: null,
-      lastPlayedCardHash: null,
-      stateHash: '',
-      isStarted: false
-    };
-  
-    initialState.stateHash = hashState(initialState);
-    return initialState;
-  }
+  const initialState: OffChainGameState = {
+    id: gameId,
+    players,
+    isActive: true,
+    currentPlayerIndex: 0,
+    lastActionTimestamp: BigInt(Math.floor(Date.now() / 1000)),
+    turnCount: BigInt(0),
+    directionClockwise: true,
+    playerHandsHash: {},
+    playerHands: {},
+    deckHash: '',
+    discardPileHash: '',
+    currentColor: null,
+    currentValue: null,
+    lastPlayedCardHash: null,
+    stateHash: '',
+    isStarted: false
+  };
 
-  export function startGame(state: OffChainGameState): OffChainGameState {
-    const newState = { ...state };
-    const deck = shuffleDeck(createDeck(), Number(state.id));
-    console.log(deck)
+  initialState.stateHash = hashState(initialState);
+  return initialState;
+}
+
+function convertBigIntsToStrings(obj: any): any {
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  } else if (Array.isArray(obj)) {
+    return obj.map(convertBigIntsToStrings);
+  } else if (typeof obj === 'object' && obj !== null) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [key, convertBigIntsToStrings(value)])
+    );
+  }
+  return obj;
+}
+
+export function startGame(state: OffChainGameState, socket?: MutableRefObject<any>): OffChainGameState {
+  const newState = { ...state };
+  const deck = shuffleDeck(createDeck(), Number(state.id));
+  console.log(deck)
+
+  let tempCardHashMap: Map<string, Card> = new Map();
+
+  tempCardHashMap.clear()
+
+  // Deal hands
+  newState.playerHandsHash = {};
+  newState.playerHands = {};
+  state.players.forEach(player => {
+    const hand = deck.splice(0, 7);
+    const handHashes = hand.map(card => {
+      const hash = hashCard(card);
+      tempCardHashMap.set(hash, card);
+      return hash;
+    });
+    newState.playerHandsHash[player] = hashCards(hand);
+    newState.playerHands[player] = handHashes;
+  });
+
+  // Set up discard pile
+  const firstCard = deck.pop()!;
+  const firstCardHash = hashCard(firstCard);
+  tempCardHashMap.set(firstCardHash, firstCard);
+  newState.discardPileHash = hashCards([firstCard]);
+  newState.currentColor = firstCard.color;
+  newState.currentValue = firstCard.value;
+  newState.lastPlayedCardHash = firstCardHash;
+
+  // Hash remaining deck
+  newState.deckHash = hashCards(deck);
+  deck.forEach(card => {
+    const hash = hashCard(card);
+    tempCardHashMap.set(hash, card);
+  });
+
+  // Randomly choose first player
+  newState.currentPlayerIndex = Math.floor(Math.random() * state.players.length);
+
+  newState.isStarted = true;
+  newState.stateHash = hashState(newState);
+
+  // Update the global cardHashMap
+  updateGlobalCardHashMap(Object.fromEntries(tempCardHashMap));
+
+  if (socket && socket.current) {
+    const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
+    const roomId = `game-${state.id.toString()}`;
     
-    cardHashMap.clear()
-
-    // Deal hands
-    newState.playerHandsHash = {};
-    newState.playerHands = {};
-    state.players.forEach(player => {
-      const hand = deck.splice(0, 7);
-      const handHashes = hand.map(card => {
-        const hash = hashCard(card);
-        cardHashMap.set(hash, card);
-        return hash;
-      });
-      newState.playerHandsHash[player] = hashCards(hand);
-      newState.playerHands[player] = handHashes;
+    socket.current.emit('gameStarted', {
+      newState: convertBigIntsToStrings(newState),
+      cardHashMap: cardHashMapObject,
+      roomId: roomId
     });
-  
-    // Set up discard pile
-    const firstCard = deck.pop()!;
-    const firstCardHash = hashCard(firstCard);
-    cardHashMap.set(firstCardHash, firstCard);
-    newState.discardPileHash = hashCards([firstCard]);
-    newState.currentColor = firstCard.color;
-    newState.currentValue = firstCard.value;
-    newState.lastPlayedCardHash = firstCardHash;
-  
-    // Hash remaining deck
-    newState.deckHash = hashCards(deck);
-    deck.forEach(card => {
-        const hash = hashCard(card);
-        cardHashMap.set(hash, card);
-    });
-  
-    // Randomly choose first player
-    newState.currentPlayerIndex = Math.floor(Math.random() * state.players.length);
-  
-    newState.isStarted = true;
-    newState.stateHash = hashState(newState);
-  
-    return newState;
   }
 
-  export function applyActionToOffChainState(state: OffChainGameState, action: Action): OffChainGameState {
-    const newState = { ...state };
-  
-    switch (action.type) {
-      case 'startGame':
-        return startGame(state);
-      case 'playCard':
-        if (action.cardHash) {
-            const playerHand = newState.playerHands[action.player];
-            const cardIndex = playerHand.indexOf(action.cardHash);
-            if (cardIndex !== -1) {
-                playerHand.splice(cardIndex, 1);
-            }
-            // Update discard pile
-            newState.discardPileHash = action.cardHash;
-            newState.lastPlayedCardHash = action.cardHash;
-            const playedCard = getCardFromHash(action.cardHash);
-            if (playedCard) {
-                newState.currentColor = playedCard.color;
-                newState.currentValue = playedCard.value;
-            }
+  return newState;
+}
+
+export function applyActionToOffChainState(state: OffChainGameState, action: Action): OffChainGameState {
+  const newState = { ...state };
+
+  switch (action.type) {
+    case 'startGame':
+      return startGame(state);
+    case 'playCard':
+      if (action.cardHash) {
+        const playerHand = newState.playerHands[action.player];
+        const cardIndex = playerHand.indexOf(action.cardHash);
+        if (cardIndex !== -1) {
+          playerHand.splice(cardIndex, 1);
         }
-        break;
-      case 'drawCard':
-        // Implementation depends on how you want to handle card drawing with hashed states
-        break;
-    }
-      
-    newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
-    newState.turnCount++;
-    newState.lastActionTimestamp = BigInt(Math.floor(Date.now() / 1000));
-  
-    newState.stateHash = hashState(newState);
-  
-    return newState;
+        // Update discard pile
+        newState.discardPileHash = action.cardHash;
+        newState.lastPlayedCardHash = action.cardHash;
+        const playedCard = getCardFromHash(action.cardHash);
+        if (playedCard) {
+          newState.currentColor = playedCard.color;
+          newState.currentValue = playedCard.value;
+        }
+      }
+      break;
+    case 'drawCard':
+      // Implementation depends on how you want to handle card drawing with hashed states
+      break;
   }
+
+  newState.currentPlayerIndex = (newState.currentPlayerIndex + 1) % newState.players.length;
+  newState.turnCount++;
+  newState.lastActionTimestamp = BigInt(Math.floor(Date.now() / 1000));
+
+  newState.stateHash = hashState(newState);
+
+  return newState;
+}
 
 function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: Card[] }): string {
   const players = Object.keys(playerHands);
@@ -177,99 +206,98 @@ function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: 
 }
 
 export function hashState(state: OffChainGameState): string {
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    const encodedState = abiCoder.encode(
-      ['uint256', 'address[]', 'bool', 'uint256', 'uint256', 'uint256', 'bool', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
-      [
-        state.id,
-        state.players,
-        state.isActive,
-        state.currentPlayerIndex,
-        state.lastActionTimestamp,
-        state.turnCount,
-        state.directionClockwise,
-        JSON.stringify(state.playerHandsHash),
-        state.deckHash,
-        state.discardPileHash,
-        state.currentColor || '',
-        state.currentValue || '',
-        state.lastPlayedCardHash || '',
-        state.isStarted
-      ]
-    );
-    return ethers.keccak256(encodedState);
-  }
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  const encodedState = abiCoder.encode(
+    ['uint256', 'address[]', 'bool', 'uint256', 'uint256', 'uint256', 'bool', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
+    [
+      state.id,
+      state.players,
+      state.isActive,
+      state.currentPlayerIndex,
+      state.lastActionTimestamp,
+      state.turnCount,
+      state.directionClockwise,
+      JSON.stringify(state.playerHandsHash),
+      state.deckHash,
+      state.discardPileHash,
+      state.currentColor || '',
+      state.currentValue || '',
+      state.lastPlayedCardHash || '',
+      state.isStarted
+    ]
+  );
+  return ethers.keccak256(encodedState);
+}
 
 export function hashAction(action: Action): string {
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    const encodedAction = abiCoder.encode(
-      ['string', 'address', 'string'],
-      [
-        action.type,
-        action.player,
-        action.cardHash || ''
-      ]
-    );
-    return ethers.keccak256(encodedAction);
-  }
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  const encodedAction = abiCoder.encode(
+    ['string', 'address', 'string'],
+    [
+      action.type,
+      action.player,
+      action.cardHash || ''
+    ]
+  );
+  return ethers.keccak256(encodedAction);
+}
 
-  export function hashCard(card: Card): string {
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    const encodedCard = abiCoder.encode(
-      ['string', 'string'],
-      [card.color, card.value]
-    );
-    return ethers.keccak256(encodedCard);
-  }
+export function hashCard(card: Card): string {
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  const encodedCard = abiCoder.encode(
+    ['string', 'string'],
+    [card.color, card.value]
+  );
+  return ethers.keccak256(encodedCard);
+}
 
-  export function hashCards(cards: Card[]): string {
-    const cardHashes = cards.map(hashCard);
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    const encodedCards = abiCoder.encode(['bytes32[]'], [cardHashes]);
-    return ethers.keccak256(encodedCards);
-  }
+export function hashCards(cards: Card[]): string {
+  const cardHashes = cards.map(hashCard);
+  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  const encodedCards = abiCoder.encode(['bytes32[]'], [cardHashes]);
+  return ethers.keccak256(encodedCards);
+}
 
-  function encryptHand(hand: Card[], gameId: bigint, playerAddress: string): string {
-    const key = `${gameId}_${playerAddress}`;
-    return CryptoJS.AES.encrypt(JSON.stringify(hand), key).toString();
-  }
+function encryptHand(hand: Card[], gameId: bigint, playerAddress: string): string {
+  const key = `${gameId}_${playerAddress}`;
+  return CryptoJS.AES.encrypt(JSON.stringify(hand), key).toString();
+}
 
-  function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): string[] {
-    const key = `${gameId}_${playerAddress}`;
-    const bytes = CryptoJS.AES.decrypt(encryptedHand, key);
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-  }
+function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): string[] {
+  const key = `${gameId}_${playerAddress}`;
+  const bytes = CryptoJS.AES.decrypt(encryptedHand, key);
+  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+}
 
-  export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
-    const key = `game_${gameId}_player_${playerAddress}`;
-    console.log('Storing player hand:', { gameId, playerAddress, handHashes });
-    const hand = handHashes.map(hash => getCardFromHash(hash)).filter(card => card !== undefined) as Card[];
-    const encryptedHand = encryptHand(hand, gameId, playerAddress);
-    localStorage.setItem(key, encryptedHand);
-  }
-  
-  export function getPlayerHand(gameId: bigint, playerAddress: string): string[] {
-    const key = `game_${gameId}_player_${playerAddress}`;
-    const encryptedHand = localStorage.getItem(key);    
-    if (encryptedHand) {
-        console.log('Retrieved encrypted hand for player:', playerAddress);
-        return decryptHand(encryptedHand, gameId, playerAddress);
-    }
-    console.log('No hand found for player:', playerAddress);
-    return [];
-  }
+export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
+  const key = `game_${gameId}_player_${playerAddress}`;
+  console.log('Storing player hand:', { gameId, playerAddress, handHashes });
+  const hand = handHashes.map(hash => getCardFromHash(hash)).filter(card => card !== undefined) as Card[];
+  const encryptedHand = encryptHand(hand, gameId, playerAddress);
+  localStorage.setItem(key, encryptedHand);
+}
 
-  // This function should be used when you need to get the actual Card objects
-  export function getPlayerHandCards(gameId: bigint, playerAddress: string): Card[] {
-    const hashes = getPlayerHand(gameId, playerAddress);
-    return hashes.map(hash => getCardFromHash(hash)).filter((card): card is Card => card !== undefined);
+export function getPlayerHand(gameId: bigint, playerAddress: string): string[] {
+  const key = `game_${gameId}_player_${playerAddress}`;
+  const encryptedHand = localStorage.getItem(key);
+  if (encryptedHand) {
+    console.log('Retrieved encrypted hand for player:', playerAddress);
+    return decryptHand(encryptedHand, gameId, playerAddress);
   }
+  console.log('No hand found for player:', playerAddress);
+  return [];
+}
 
-  export function getCardFromHash(cardHash: string): Card | undefined {
-    console.log('Getting card for hash:', cardHash);
-    const card = cardHashMap.get(cardHash);
-    console.log('Retrieved card:', card);
-    return card;
-  }
+// This function should be used when you need to get the actual Card objects
+export function getPlayerHandCards(gameId: bigint, playerAddress: string): Card[] {
+  const hashes = getPlayerHand(gameId, playerAddress);
+  return hashes.map(hash => getCardFromHash(hash)).filter((card): card is Card => card !== undefined);
+}
 
-  
+export function getCardFromHash(cardHash: string): Card | undefined {
+  console.log('Getting card for hash:', cardHash);
+  console.log('Global cardHashMap:', getGlobalCardHashMap());
+  const card = getCardFromGlobalHashMap(cardHash);
+  console.log('Retrieved card:', card);
+  return card;
+}
