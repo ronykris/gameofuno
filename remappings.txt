@@ -1,6 +1,1 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
-
- <main className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">UNO Game Lobby</h1>
-      <Lobby socket={socket}/>
-    </main>
