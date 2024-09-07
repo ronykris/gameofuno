@@ -14,7 +14,7 @@ import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/glob
 
 const CONNECTION = 'localhost:4000';
 
-export default function Game() {
+const Game: React.FC = () => {
   const { id } = useParams()
   const [gameId, setGameId] = useState<bigint | null>(null)
   const accountRef = useRef<string | null>(null);
@@ -301,3 +301,5 @@ export default function Game() {
     </div>
   )
 }
+
+export default Game

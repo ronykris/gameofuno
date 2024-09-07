@@ -19,7 +19,8 @@ export function isValidPlay(cardHash: string, { currentColor, currentValue }: { 
 export function canPlay(handHashes: string[], currentColor: CardColor, currentValue: CardValue): boolean {
   return handHashes.some(cardHash => {
     const card = getCardFromHash(cardHash);
-    return card ? isValidPlay(cardHash, { currentColor, currentValue }) : false;
+    const ans = card ? isValidPlay(cardHash, { currentColor, currentValue }) : false
+    return ans;
   });
 }
 
@@ -151,7 +152,7 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
   if (socket && socket.current) {
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
     const roomId = `game-${state.id.toString()}`;
-    
+
     socket.current.emit('gameStarted', {
       newState: convertBigIntsToStrings(newState),
       cardHashMap: cardHashMapObject,
@@ -258,7 +259,7 @@ export function hashCards(cards: Card[]): string {
   return ethers.keccak256(encodedCards);
 }
 
-function encryptHand(hand: Card[], gameId: bigint, playerAddress: string): string {
+function encryptHand(hand: string[], gameId: bigint, playerAddress: string): string {
   const key = `${gameId}_${playerAddress}`;
   return CryptoJS.AES.encrypt(JSON.stringify(hand), key).toString();
 }
@@ -272,7 +273,7 @@ function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: strin
 export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
   const key = `game_${gameId}_player_${playerAddress}`;
   console.log('Storing player hand:', { gameId, playerAddress, handHashes });
-  const hand = handHashes.map(hash => getCardFromHash(hash)).filter(card => card !== undefined) as Card[];
+  const hand = handHashes;
   const encryptedHand = encryptHand(hand, gameId, playerAddress);
   localStorage.setItem(key, encryptedHand);
 }
