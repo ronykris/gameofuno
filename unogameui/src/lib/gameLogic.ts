@@ -3,10 +3,13 @@ import { Card, CardColor, CardValue, OffChainGameState, Action } from './types';
 import CryptoJS from 'crypto-js';
 import { MutableRefObject } from 'react';
 import { updateGlobalCardHashMap, getGlobalCardHashMap, getCardFromGlobalHashMap } from './globalState';
+import { HashedDiscardPile } from './discardPile';
+import { hash } from 'crypto';
 
 
 const COLORS: CardColor[] = ['red', 'blue', 'green', 'yellow'];
 const VALUES: CardValue[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
+let deck: Card[] = []
 
 export function isValidPlay(cardHash: string, { currentColor, currentValue }: { currentColor: CardColor; currentValue: CardValue }): boolean {
   const card = getCardFromHash(cardHash);
@@ -105,17 +108,19 @@ function convertBigIntsToStrings(obj: any): any {
 
 export function startGame(state: OffChainGameState, socket?: MutableRefObject<any>): OffChainGameState {
   const newState = { ...state };
-  const deck = shuffleDeck(createDeck(), Number(state.id));
+  deck = shuffleDeck(createDeck(), Number(state.id));
   console.log(deck)
-
+  console.log(deck.length)
   let tempCardHashMap: Map<string, Card> = new Map();
-
   tempCardHashMap.clear()
+
   deck.forEach(card => {
     const hash = hashCard(card);
     tempCardHashMap.set(hash, card);
   });
-  console.log(tempCardHashMap.size)
+  console.log('Temp Card Deck Size: ',tempCardHashMap.size)
+  // Update the global cardHashMap
+  updateGlobalCardHashMap(Object.fromEntries(tempCardHashMap));
   // Deal hands
   newState.playerHandsHash = {};
   newState.playerHands = {};
@@ -123,17 +128,18 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
     const hand = deck.splice(0, 7);
     const handHashes = hand.map(card => {
       const hash = hashCard(card);
-      tempCardHashMap.set(hash, card);
+      //tempCardHashMap.set(hash, card);
       return hash;
     });
     newState.playerHandsHash[player] = hashCards(hand);
     newState.playerHands[player] = handHashes;
+    console.log(`Player ${player} hand: `, handHashes)
   });
 
   // Set up discard pile
   const firstCard = deck.pop()!;
   const firstCardHash = hashCard(firstCard);
-  tempCardHashMap.set(firstCardHash, firstCard);
+  //tempCardHashMap.set(firstCardHash, firstCard);
   newState.discardPileHash = hashCards([firstCard]);
   newState.currentColor = firstCard.color;
   newState.currentValue = firstCard.value;
@@ -147,9 +153,6 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
 
   newState.isStarted = true;
   newState.stateHash = hashState(newState);
-
-  // Update the global cardHashMap
-  updateGlobalCardHashMap(Object.fromEntries(tempCardHashMap));
 
   if (socket && socket.current) {
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
@@ -166,7 +169,10 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
 }
 
 export function applyActionToOffChainState(state: OffChainGameState, action: Action): OffChainGameState {
+  
   const newState = { ...state };
+
+  const discardPile = new HashedDiscardPile()
 
   switch (action.type) {
     case 'startGame':
@@ -179,11 +185,10 @@ export function applyActionToOffChainState(state: OffChainGameState, action: Act
           playerHand.splice(cardIndex, 1);
         }
         // Update discard pile
-        const currentDiscardPile = decodeHashedDiscardPile(state.discardPileHash);
         const playedCard = getCardFromHash(action.cardHash);
         if (playedCard) {
-          currentDiscardPile.push(playedCard);
-          newState.discardPileHash = hashCards(currentDiscardPile);
+          discardPile.addCard(playedCard);
+          newState.discardPileHash = discardPile.getDiscardPileHash()
           newState.lastPlayedCardHash = action.cardHash;
           newState.currentColor = playedCard.color;
           newState.currentValue = playedCard.value;
@@ -195,14 +200,17 @@ export function applyActionToOffChainState(state: OffChainGameState, action: Act
     case 'drawCard':
       if (action.player === state.players[state.currentPlayerIndex]) {
         try {
-          const { topCard, newDeckHash } = decodeTopCardFromDeck(state.deckHash);
-          newState.deckHash = newDeckHash;
+          //const { topCard, newDeckHash } = decodeTopCardFromDeck(state.deckHash);
+          const topCard = deck.pop()!
+          newState.deckHash = hashCards(deck)
           const drawnCardHash = hashCard(topCard);
           if (isValidPlay(drawnCardHash, { currentColor: newState.currentColor!, currentValue: newState.currentValue! })) {
             // Play the card
-            const currentDiscardPile = decodeHashedDiscardPile(state.discardPileHash);
-            currentDiscardPile.push(topCard);
-            newState.discardPileHash = hashCards(currentDiscardPile);
+            //const currentDiscardPile = decodeHashedDiscardPile(state.discardPileHash);
+            //const currentDiscardPile = discardPile.
+            //currentDiscardPile.push(topCard);
+            discardPile.addCard(topCard)
+            newState.discardPileHash = discardPile.getDiscardPileHash()
             newState.lastPlayedCardHash = drawnCardHash;
             newState.currentColor = topCard.color;
             newState.currentValue = topCard.value;
@@ -213,7 +221,7 @@ export function applyActionToOffChainState(state: OffChainGameState, action: Act
           }
       
          // Update the global card hash map
-        updateGlobalCardHashMap({ [drawnCardHash]: topCard });
+        //updateGlobalCardHashMap({ [drawnCardHash]: topCard });
       
         // Move to the next player only if the drawn card wasn't played
         if (newState.lastPlayedCardHash !== drawnCardHash) {
@@ -223,20 +231,23 @@ export function applyActionToOffChainState(state: OffChainGameState, action: Act
           if ( err instanceof Error) {
             if (err.message === "Deck is empty") {
               // Handle empty deck (e.g., reshuffle discard pile)
-              const newDeck = reshuffleDiscardPile(state.discardPileHash);
+              //const newDeck = reshuffleDiscardPile(state.discardPileHash);
+              const newDeck = discardPile.reShuffleDiscardPile()
               newState.deckHash = hashCards(newDeck);
               newState.discardPileHash = hashCards([]);
               
               try {
-                const { topCard, newDeckHash } = decodeTopCardFromDeck(newState.deckHash);
-                newState.deckHash = newDeckHash;
+                //const { topCard, newDeckHash } = decodeTopCardFromDeck(newState.deckHash);
+                const topCard = newDeck.pop()!
+                newState.deckHash = hashCards(newDeck)
                 const drawnCardHash = hashCard(topCard);
                 
                 if (isValidPlay(drawnCardHash, { currentColor: newState.currentColor!, currentValue: newState.currentValue! })) {
                   // Play the card
-                  const currentDiscardPile = decodeHashedDiscardPile(newState.discardPileHash);
-                  currentDiscardPile.push(topCard);
-                  newState.discardPileHash = hashCards(currentDiscardPile);
+                  discardPile.addCard(topCard)
+                  //const currentDiscardPile = decodeHashedDiscardPile(newState.discardPileHash);
+                  //currentDiscardPile.push(topCard);
+                  newState.discardPileHash = discardPile.getDiscardPileHash()
                   newState.lastPlayedCardHash = drawnCardHash;
                   newState.currentColor = topCard.color;
                   newState.currentValue = topCard.value;
@@ -251,7 +262,7 @@ export function applyActionToOffChainState(state: OffChainGameState, action: Act
                 }
                 
                 // Update the global card hash map
-                updateGlobalCardHashMap({ [drawnCardHash]: topCard });
+                //updateGlobalCardHashMap({ [drawnCardHash]: topCard });
                 
                 console.log("Draw action retry successful.");
               } catch (retryErr) {
@@ -381,31 +392,6 @@ export function getCardFromHash(cardHash: string): Card | undefined {
   const card = getCardFromGlobalHashMap(cardHash);
   console.log('Retrieved card:', card);
   return card;
-}
-
-export function decodeTopCardFromDeck(deckHash: string): { topCard: Card, newDeckHash: string } {
-  const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-  const decodedData = abiCoder.decode(['bytes32[]'], ethers.toBeArray(deckHash));
-  const cardHashes: string[] = decodedData[0];
-
-  if (cardHashes.length === 0) {
-    throw new Error("Deck is empty");
-  }
-  // Get the top card hash (last element in the array)
-  const topCardHash = cardHashes[cardHashes.length - 1];
-
-  const globalCardHashMap = getGlobalCardHashMap();
-  const topCard = globalCardHashMap.get(topCardHash);
-
-  if (!topCard) {
-    throw new Error(`Card with hash ${topCardHash} not found in global card hash map`);
-  }
-
-  // Remove the top card from the deck
-  const newCardHashes = cardHashes.slice(0, -1);
-  const newDeckHash = ethers.keccak256(abiCoder.encode(['bytes32[]'], [newCardHashes]));
-
-  return { topCard, newDeckHash };
 }
 
 export function decodeHashedDiscardPile(discardPileHash: string): Card[] {

@@ -7,8 +7,8 @@ import "../src/uno.sol";
 contract DeployUNOGame is Script {
     function run() external {
         
-        //uint256 deployerPrivateKey = vm.envUint("LOCAL_PRIVATE_KEY");
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("LOCAL_PRIVATE_KEY");
+        //uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         require(deployerPrivateKey != 0, "PRIVATE_KEY not set");
         vm.startBroadcast(deployerPrivateKey);
         address deployer = vm.addr(deployerPrivateKey);
