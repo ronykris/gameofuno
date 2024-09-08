@@ -359,7 +359,18 @@ function encryptHand(hand: string[], gameId: bigint, playerAddress: string): str
 function decryptHand(encryptedHand: string, gameId: bigint, playerAddress: string): string[] {
   const key = `${gameId}_${playerAddress}`;
   const bytes = CryptoJS.AES.decrypt(encryptedHand, key);
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+  console.log('Decrypted string:', decryptedString);
+  if (!decryptedString) {
+    console.error('Decryption resulted in an empty string');
+    return [];
+  }
+  const parsedHand = JSON.parse(decryptedString);
+  if (!Array.isArray(parsedHand)) {
+    console.error('Decrypted data is not an array:', parsedHand);
+    return [];
+  }
+  return parsedHand
 }
 
 export function storePlayerHand(gameId: bigint, playerAddress: string, handHashes: string[]): void {
