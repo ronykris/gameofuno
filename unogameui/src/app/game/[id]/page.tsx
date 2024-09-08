@@ -135,7 +135,7 @@ const Game: React.FC = () => {
       const actions = await contract.getGameActions(gameId)
       for (const action of actions) {
         const decodedAction: Action = {
-          type: 'playCard', // This is a simplification. You'd need to properly decode the action.
+          type: 'playCard',
           player: action.player,
           cardHash: action.actionHash
         }
@@ -208,9 +208,8 @@ const Game: React.FC = () => {
   const drawCard = async () => {
     if (!contract || !account || !offChainGameState || !onChainGameState) return
 
-    const action = { type: 'startGame' as ActionType, player: account }
+    const action = { type: 'drawCard' as ActionType, player: account }
 
-    // Optimistically update the local state
     const newOffChainState = applyActionToOffChainState(offChainGameState, action)
     setOffChainGameState(newOffChainState)
 
@@ -220,8 +219,6 @@ const Game: React.FC = () => {
 
       // Add to pending actions
       setPendingActions(prev => [...prev, { action, txHash: tx.hash }])
-
-      // Wait for transaction confirmation
       await tx.wait()
 
       // Remove from pending actions once confirmed
