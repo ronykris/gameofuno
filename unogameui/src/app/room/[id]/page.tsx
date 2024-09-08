@@ -161,8 +161,8 @@ const Room: React.FC = () => {
         const actionHash = hashAction(action)
 
         try {
-            // const tx = await contract.startGame(gameId, newState.stateHash)
-            // await tx.wait()
+            const tx = await contract.startGame(gameId, newState.stateHash)
+            await tx.wait()
             //setOffChainGameState(newState)
 
             // Store the player's hand locally
