@@ -103,11 +103,15 @@ export default function PlayGame() {
     const joinGame = async (gameId: BigInt) => {
         if (contract) {
             try {
+                setJoinLoading(true)
                 console.log(`Joining game ${gameId.toString()}...`)
                 const gameIdBigint = BigInt(gameId.toString())
                 const tx = await contract.joinGame(gameIdBigint)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
+
+                setJoinLoading(false)
+
                 console.log('Joined game successfully')
                 router.push(`/room/${gameId.toString()}`)
             } catch (error) {

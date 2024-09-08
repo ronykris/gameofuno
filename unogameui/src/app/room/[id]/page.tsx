@@ -9,6 +9,7 @@ import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
 import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
+import StyledButton from '@/components/styled-button'
 
 const CONNECTION = 'localhost:4000';
 
@@ -160,8 +161,8 @@ const Room: React.FC = () => {
         const actionHash = hashAction(action)
 
         try {
-            const tx = await contract.startGame(gameId, newState.stateHash)
-            await tx.wait()
+            // const tx = await contract.startGame(gameId, newState.stateHash)
+            // await tx.wait()
             //setOffChainGameState(newState)
 
             // Store the player's hand locally
@@ -247,9 +248,7 @@ const Room: React.FC = () => {
                 {offChainGameState && onChainGameState && (
                     <div className='flex flex-col items-center justify-center mt-20'>
                         {!offChainGameState.isStarted && !onChainGameState.isStarted ? (
-                            <button onClick={handleStartGame} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4">
-                                Start Game
-                            </button>
+                            <StyledButton onClick={handleStartGame} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Start Game </StyledButton>
                         ) : (
                             <div>
                                 <GameBoard
@@ -263,13 +262,15 @@ const Room: React.FC = () => {
                                     hand={playerHand}
                                     onCardPlay={playCard}
                                 />
-                                <button
-                                    onClick={drawCard}
-                                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                                    disabled={!canPlay(getPlayerHand(gameId!, account!), offChainGameState.currentColor!, offChainGameState.currentValue!)}
-                                >
-                                    Draw Card
-                                </button>
+                                <div className='flex justify-center items-center'>
+                                    <StyledButton
+                                        onClick={drawCard}
+                                        className='w-fit bg-blue-500 bottom-4 text-2xl mt-6'
+                                        disabled={!canPlay(getPlayerHand(gameId!, account!), offChainGameState.currentColor!, offChainGameState.currentValue!)}
+                                    >
+                                        Draw Card
+                                    </StyledButton>
+                                </div>
                                 {pendingActions.length > 0 && (
                                     <div className="mt-4">
                                         <h2 className="text-xl font-bold">Pending Actions:</h2>
