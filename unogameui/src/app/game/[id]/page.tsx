@@ -12,7 +12,7 @@ import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
 //import { reconstructActionFromHash } from '@/lib/stateManagement'
 
-const CONNECTION = 'localhost:4000';
+const CONNECTION = 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 const Game: React.FC = () => {
   const { id } = useParams()

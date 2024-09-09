@@ -9,7 +9,7 @@ import { getContract } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const CONNECTION = 'localhost:4000';
+const CONNECTION = 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 export default function PlayGame() {
 
@@ -41,6 +41,8 @@ export default function PlayGame() {
             socket.current = io(CONNECTION, {
                 transports: ["websocket"],
             }) as any; // Type assertion to fix the type mismatch
+
+            console.log("Socket connection established");
         }
 
     }, [socket]);
