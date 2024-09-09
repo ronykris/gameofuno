@@ -9,7 +9,7 @@ import { getContract } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const CONNECTION = 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
+const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 export default function PlayGame() {
 

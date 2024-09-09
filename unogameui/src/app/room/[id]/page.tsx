@@ -11,7 +11,7 @@ import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
 import StyledButton from '@/components/styled-button'
 
-const CONNECTION = 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
+const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 const Room: React.FC = () => {
     const { id } = useParams()
