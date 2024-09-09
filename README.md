@@ -25,7 +25,7 @@
    ```
 3. Start the socket server:
    ```bash
-   npm run start
+   npm start
    ```
 
 Ensure both the frontend and backend are running simultaneously for the application to function properly.
