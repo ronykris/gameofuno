@@ -10,6 +10,7 @@ import PlayerHand from '../../../components/PlayerHand'
 import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
 import StyledButton from '@/components/styled-button'
+import { convertBigIntsToStrings } from '@/lib/gameLogic'
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -68,6 +69,20 @@ const Room: React.FC = () => {
                     // Update other relevant state
                     setPlayerToStart(newState.players[newState.currentPlayerIndex]);
                 });
+
+                // Listen for cardPlayed event
+                socket.current.on(`cardPlayed-${roomId}`, (data) => {
+                    console.log(`Card played event received for room ${roomId}:`, data);
+                    const { action, newState } = data;
+
+                    // Update the off-chain game state
+                    setOffChainGameState(newState);
+
+                    // Update player hand if necessary
+                    if (accountRef.current && newState.playerHands[accountRef.current]) {
+                        setPlayerHand(newState.playerHands[accountRef.current]);
+                    }
+                });
             }
         }
 
@@ -75,6 +90,7 @@ const Room: React.FC = () => {
         return () => {
             if (socket.current) {
                 socket.current.off('receiveGameStart');
+                socket.current.off(`cardPlayed-${id}`);
             }
         };
     }, [id, gameId, socket]);
@@ -161,8 +177,8 @@ const Room: React.FC = () => {
         const actionHash = hashAction(action)
 
         try {
-            // const tx = await contract.startGame(gameId, newState.stateHash)
-            // await tx.wait()
+            const tx = await contract.startGame(gameId, newState.stateHash)
+            await tx.wait()
             //setOffChainGameState(newState)
 
             // Store the player's hand locally
@@ -188,8 +204,7 @@ const Room: React.FC = () => {
     }
 
     const playCard = async (cardHash: string) => {
-        if (!contract || !account || !offChainGameState || !gameId) return
-
+        if (!contract || !account || !offChainGameState || !gameId || !socket.current) return
         const action: Action = { type: 'playCard', player: account, cardHash }
         const newState = applyActionToOffChainState(offChainGameState, action)
         const actionHash = hashAction(action)
@@ -198,6 +213,11 @@ const Room: React.FC = () => {
             const tx = await contract.submitAction(gameId, actionHash)
             await tx.wait()
             setOffChainGameState(newState)
+
+            // Broadcast the action to all players in the room
+            const roomId = `game-${id.toString()}`;
+            socket.current.emit('playCard', { roomId, action, newState: convertBigIntsToStrings(newState) });
+            
         } catch (error) {
             console.error('Error playing card:', error)
             setError('Failed to submit action. Please try again.')

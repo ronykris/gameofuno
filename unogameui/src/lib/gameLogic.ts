@@ -94,7 +94,7 @@ export function initializeOffChainState(gameId: bigint, players: string[]): OffC
   return initialState;
 }
 
-function convertBigIntsToStrings(obj: any): any {
+export function convertBigIntsToStrings(obj: any): any {
   if (typeof obj === 'bigint') {
     return obj.toString();
   } else if (Array.isArray(obj)) {

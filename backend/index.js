@@ -56,6 +56,16 @@ io.on("connection", (socket) => {
         io.to(roomId).emit(`gameStarted-${roomId}`, { newState, cardHashMap });
     });
 
+    // Add playCard event handler
+    socket.on('playCard', (data) => {
+        const { roomId, action, newState } = data;
+        console.log(`Card played in room ${roomId}`);
+        console.log('New state:', newState);
+
+        // Broadcast the cardPlayed event to all clients in the room
+        io.to(roomId).emit(`cardPlayed-${roomId}`, { action, newState });
+    });
+
     // Add leave room functionality
     socket.on("leaveRoom", (roomId) => {
         socket.leave(roomId);
