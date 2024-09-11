@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { getContract } from '../lib/web3'
 import { UnoGameContract } from '../lib/types'
 import { ethers } from 'ethers'
+import { useAccount } from 'wagmi'
 
 export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
-  const [account, setAccount] = useState<string | null>(null)
+  const { address, status } = useAccount()
   const [contract, setContract] = useState<UnoGameContract | null>(null)
   const [games, setGames] = useState<BigInt[]>([])
   const router = useRouter()
@@ -28,8 +29,7 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
   useEffect(() => {
     const setup = async () => {
       try {
-        const { account, contract } = await getContract()
-        setAccount(account)
+        const { contract } = await getContract()
         setContract(contract)
       } catch (error) {
         console.error('Failed to setup contract:', error)
@@ -98,13 +98,13 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
     }
   }
 
-  if (!account) {
+  if (!address) {
     return <p>Please connect your wallet to play.</p>
   }
 
   return (
     <div>
-      <p className="mb-4">Connected: {account}</p>
+      <p className="mb-4">Connected: {address}</p>
       <button
         onClick={createGame}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4"
