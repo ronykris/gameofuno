@@ -140,7 +140,7 @@ export default function PlayGame() {
                 <div className='absolute left-8 -right-8 top-14 -bottom-14 bg-no-repeat bg-[url("/dealer.png")] transform-gpu'>
                     <div className='absolute -left-8 right-8 -top-14 bottom-14 bg-no-repeat bg-[url("/card-0.png")] animate-pulse'></div>
                 </div>
-                <div className='absolute top-0 left-1/2 right-0 bottom-0 pr-20 py-12'>
+                <div className='absolute top-0 md:left-1/2 md:right-0 bottom-0 w-[calc(100%-2rem)] md:w-auto md:pr-20 py-12'>
                     {!account ?
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />

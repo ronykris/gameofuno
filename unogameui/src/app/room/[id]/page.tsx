@@ -161,8 +161,8 @@ const Room: React.FC = () => {
         const actionHash = hashAction(action)
 
         try {
-            const tx = await contract.startGame(gameId, newState.stateHash)
-            await tx.wait()
+            // const tx = await contract.startGame(gameId, newState.stateHash)
+            // await tx.wait()
             //setOffChainGameState(newState)
 
             // Store the player's hand locally
@@ -246,7 +246,7 @@ const Room: React.FC = () => {
             <div className='transition-transform relative w-full max-w-[1280px] h-[720px] m-20 mt-10 mx-auto bg-[url("/bg-3.jpg")] select-none rounded-3xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]' >
                 {/* <PlayerPanel></PlayerPanel> */}
                 {offChainGameState && onChainGameState && (
-                    <div className='flex flex-col items-center justify-center mt-20'>
+                    <div className='flex flex-col items-center justify-center mt-20 px-2'>
                         {!offChainGameState.isStarted && !onChainGameState.isStarted ? (
                             <StyledButton onClick={handleStartGame} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Start Game </StyledButton>
                         ) : (
