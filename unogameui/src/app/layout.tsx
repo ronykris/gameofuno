@@ -1,6 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
-
+import { Providers } from './provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -14,10 +14,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-
   return (
     <html lang="en">
-      <body className={`bg-cover bg-[url("/bg.png")] ${inter.className}`}>{children}</body>
+      <body className={`bg-cover bg-[url("/bg.png")] ${inter.className}`}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   )
 }

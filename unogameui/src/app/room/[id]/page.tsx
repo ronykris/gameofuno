@@ -11,11 +11,13 @@ import { io, Socket } from 'socket.io-client'
 import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/globalState';
 import StyledButton from '@/components/styled-button'
 import { convertBigIntsToStrings } from '@/lib/gameLogic'
+import { useAccount } from 'wagmi'
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 const Room: React.FC = () => {
     const { id } = useParams()
+    const { address, status } = useAccount()
     const [gameId, setGameId] = useState<bigint | null>(null)
     const accountRef = useRef<string | null>(null);
     const [account, setAccount] = useState<string | null>(null)
@@ -30,10 +32,16 @@ const Room: React.FC = () => {
 
     const socket = useRef<Socket | null>(null);
 
-    // Update accountRef whenever account changes
+    // Update accountRef and account whenever address changes
     useEffect(() => {
-        accountRef.current = account;
-    }, [account]);
+        if (address) {
+            accountRef.current = address;
+            setAccount(address);
+        } else {
+            accountRef.current = null;
+            setAccount(null);
+        }
+    }, [address]);
 
     useEffect(() => {
         if (!socket.current) {
@@ -97,19 +105,20 @@ const Room: React.FC = () => {
 
     useEffect(() => {
         const setup = async () => {
-            const { account, contract } = await getContract()
-            setAccount(account)
-            setContract(contract)
-            console.log('Account: ', account, 'contract: ', contract)
-            if (contract && id) {
-                const bigIntId = BigInt(id as string)
-                setGameId(bigIntId)
-                console.log('Game ID: ', bigIntId)
-                await fetchGameState(contract, bigIntId, account)
+            if (status === 'connected' && address) {
+                const { contract } = await getContract()
+                setContract(contract)
+                console.log('Account: ', address, 'contract: ', contract)
+                if (contract && id) {
+                    const bigIntId = BigInt(id as string)
+                    setGameId(bigIntId)
+                    console.log('Game ID: ', bigIntId)
+                    await fetchGameState(contract, bigIntId, address)
+                }
             }
         }
         setup()
-    }, [id])
+    }, [id, status, address])
 
     useEffect(() => {
         if (playerToStart) {
@@ -217,7 +226,7 @@ const Room: React.FC = () => {
             // Broadcast the action to all players in the room
             const roomId = `game-${id.toString()}`;
             socket.current.emit('playCard', { roomId, action, newState: convertBigIntsToStrings(newState) });
-            
+
         } catch (error) {
             console.error('Error playing card:', error)
             setError('Failed to submit action. Please try again.')

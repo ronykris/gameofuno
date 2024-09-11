@@ -8,11 +8,14 @@ import { UnoGameContract } from '@/lib/types';
 import { getContract } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 export default function PlayGame() {
 
+    const { address, status } = useAccount()
     const [open, setOpen] = useState(false)
     const [createLoading, setCreateLoading] = useState(false)
     const [joinLoading, setJoinLoading] = useState(false)
@@ -123,14 +126,25 @@ export default function PlayGame() {
     }
 
     const setup = async () => {
-        try {
-            const { account, contract } = await getContract()
-            setAccount(account)
-            setContract(contract)
-        } catch (error) {
-            console.error('Failed to setup contract:', error)
+        if (address) {
+            try {
+                const { contract } = await getContract()
+                setContract(contract)
+                setAccount(address)
+            } catch (error) {
+                console.error('Failed to setup contract:', error)
+            }
         }
     }
+
+    useEffect(() => {
+        if (status === 'connected' && address) {
+            setup()
+        } else {
+            setAccount(null)
+            setContract(null)
+        }
+    }, [status, address])
 
     return (
         <div className='relative'>
@@ -145,7 +159,8 @@ export default function PlayGame() {
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
                             <div className='left-1/2 -translate-x-1/2 absolute bottom-4'>
-                                <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={setup}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
+                                <ConnectButton chainStatus="icon" showBalance={true} />
+                                {/* <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={setup}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton> */}
                             </div>
                         </div>
                         : <>

@@ -19,16 +19,16 @@ async function verifyContract(provider: ethers.Provider, address: string) {
 export async function getContract() {
   if (typeof window !== 'undefined' && window.ethereum) {
     try {
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
+      // await window.ethereum.request({ method: 'eth_requestAccounts' })
       const provider = new ethers.BrowserProvider(window.ethereum)
       
-      const network = await provider.getNetwork()
-      console.log('Connected to network:', network.name, 'Chain ID:', network.chainId)
+      // const network = await provider.getNetwork()
+      // console.log('Connected to network:', network.name, 'Chain ID:', network.chainId)
 
       const signer = await provider.getSigner()
-      console.log(signer)
-      const address = await signer.getAddress()
-      console.log(address)
+      // console.log(signer)
+      // const address = await signer.getAddress()
+      // console.log(address)
 
       //TestNet
       const contractAddress = '0x7e25d8b74cc92E114C9275D04C814c6Fef3E4036' 
@@ -47,7 +47,7 @@ export async function getContract() {
         signer
       ) as ethers.Contract & UnoGameContract
 
-      return { account: address, contract: gameContract }
+      return { contract: gameContract }
     } catch (error) {
       console.error('Failed to connect wallet:', error)
     }
