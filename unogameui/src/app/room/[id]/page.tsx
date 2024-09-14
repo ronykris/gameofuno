@@ -219,7 +219,7 @@ const Room: React.FC = () => {
         const actionHash = hashAction(action)
 
         try {
-            const tx = await contract.submitAction(gameId, actionHash)
+            const tx = await contract.submitAction(gameId, actionHash, account)
             await tx.wait()
             setOffChainGameState(newState)
 
@@ -245,7 +245,7 @@ const Room: React.FC = () => {
 
         try {
             const actionHash = hashState(newOffChainState)
-            const tx = await contract.submitAction(gameId!, actionHash)
+            const tx = await contract.submitAction(gameId!, actionHash, account)
 
             // Add to pending actions
             setPendingActions(prev => [...prev, { action, txHash: tx.hash }])

@@ -34,11 +34,11 @@ contract UnoGame is ReentrancyGuard {
     event ActionSubmitted(uint256 indexed gameId, address player, bytes32 actionHash);
     event GameEnded(uint256 indexed gameId);
 
-    function createGame() external nonReentrant returns (uint256) {
+    function createGame(address _creator) external nonReentrant returns (uint256) {
         _gameIdCounter++;
         uint256 newGameId = _gameIdCounter;
 
-        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender)));
+        uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, _creator)));
         bytes32 initialStateHash = keccak256(abi.encodePacked(newGameId, seed));
 
         games[newGameId] = Game({
@@ -69,12 +69,12 @@ contract UnoGame is ReentrancyGuard {
         emit GameStarted(gameId, initialStateHash);
     }
 
-    function joinGame(uint256 gameId) external nonReentrant {
+    function joinGame(uint256 gameId, address _joinee) external nonReentrant {
         require(games[gameId].isActive, "Game is not active");
         require(games[gameId].players.length < 10, "Game is full");
 
-        games[gameId].players.push(msg.sender);
-        emit PlayerJoined(gameId, msg.sender);
+        games[gameId].players.push(_joinee);
+        emit PlayerJoined(gameId, _joinee);
 
         //if (games[gameId].players.length == 4) {
         //    startGame(gameId);
@@ -93,22 +93,22 @@ contract UnoGame is ReentrancyGuard {
         ));
     }
 
-    function submitAction(uint256 gameId, bytes32 actionHash) external nonReentrant {
+    function submitAction(uint256 gameId, bytes32 actionHash, address _actor) external nonReentrant {
         Game storage game = games[gameId];
         require(game.isActive, "Game is not active");
-        require(isPlayerTurn(gameId, msg.sender), "Not your turn");
+        require(isPlayerTurn(gameId, _actor), "Not your turn");
 
         game.stateHash = keccak256(abi.encodePacked(game.stateHash, actionHash));
 
         gameActions[gameId].push(Action({
-            player: msg.sender,
+            player: _actor,
             actionHash: actionHash,
             timestamp: block.timestamp
         }));
 
         updateGameState(gameId);
 
-        emit ActionSubmitted(gameId, msg.sender, actionHash);
+        emit ActionSubmitted(gameId, _actor, actionHash);
     }
 
     function updateGameState(uint256 gameId) internal {
@@ -123,10 +123,10 @@ contract UnoGame is ReentrancyGuard {
         return games[gameId].players[games[gameId].currentPlayerIndex] == player;
     }
 
-    function endGame(uint256 gameId) external {
+    function endGame(uint256 gameId, address _actor) external {
         Game storage game = games[gameId];
         require(game.isActive, "Game is not active");
-        require(isPlayerTurn(gameId, msg.sender), "Not your turn");
+        require(isPlayerTurn(gameId, _actor), "Not your turn");
 
         game.isActive = false;
         removeFromActiveGames(gameId);

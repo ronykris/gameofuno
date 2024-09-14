@@ -101,7 +101,7 @@ export default function PlayGame() {
             try {
                 setCreateLoading(true)
                 console.log('Creating game...')
-                const tx = await contract.createGame()
+                const tx = await contract.createGame(account)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
                 console.log('Game created successfully')
@@ -125,7 +125,7 @@ export default function PlayGame() {
                 setJoinLoading(true)
                 console.log(`Joining game ${gameId.toString()}...`)
                 const gameIdBigint = BigInt(gameId.toString())
-                const tx = await contract.joinGame(gameIdBigint)
+                const tx = await contract.joinGame(gameIdBigint, account)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
 

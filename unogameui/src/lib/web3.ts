@@ -34,7 +34,7 @@ export async function getContract(address: string) {
       // console.log(address)
 
       //TestNet
-      const contractAddress = '0x7e25d8b74cc92E114C9275D04C814c6Fef3E4036'
+      const contractAddress = '0x4E5059C9Dad07d89C387e951F47eb0853e38B87b'
       //Local
       //const contractAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3' 
       if (!contractAddress) {
@@ -64,8 +64,6 @@ export async function getContractNew() {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
     const KEY = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-    console.log(KEY)
-
     if (!KEY) {
       throw new Error('Something is missing');
     }
@@ -73,14 +71,12 @@ export async function getContractNew() {
     const wallet = new ethers.Wallet(KEY, provider);
 
     // TestNet
-    const contractAddress = '0x7e25d8b74cc92E114C9275D04C814c6Fef3E4036';
-
+    const contractAddress = '0x4E5059C9Dad07d89C387e951F47eb0853e38B87b';
     if (!contractAddress) {
       throw new Error('Contract address is not set');
     }
 
     const contractABI = UNOContractJson.abi;
-
     await verifyContract(provider, contractAddress);
 
     const gameContract = new ethers.Contract(

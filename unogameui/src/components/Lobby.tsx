@@ -66,7 +66,7 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
     if (contract) {
       try {
         console.log('Creating game...')
-        const tx = await contract.createGame()
+        const tx = await contract.createGame(address)
         console.log('Transaction hash:', tx.hash)
         await tx.wait()
         console.log('Game created successfully')
@@ -87,7 +87,7 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
       try {
         console.log(`Joining game ${gameId.toString()}...`)
         const gameIdBigint = BigInt(gameId.toString())
-        const tx = await contract.joinGame(gameIdBigint)
+        const tx = await contract.joinGame(gameIdBigint, address)
         console.log('Transaction hash:', tx.hash)
         await tx.wait()
         console.log('Joined game successfully')
