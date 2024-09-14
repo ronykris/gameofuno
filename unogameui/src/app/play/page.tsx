@@ -9,13 +9,24 @@ import { getContract } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
+import { useWriteContract } from 'wagmi';
+import UNOContractJson from '@/constants/UnoGame.json'
+import { createPublicClient, createWalletClient, http } from 'viem'
+import { kakarot } from '@/lib/wagmi';
+
+const walletClient = createWalletClient({
+    chain: kakarot,
+    transport: http('https://sepolia-rpc.kakarot.org')
+})
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 export default function PlayGame() {
 
     const { address, status } = useAccount()
+    const { ready, user, authenticated, login, connectWallet, logout, linkWallet } = usePrivy();
     const [open, setOpen] = useState(false)
     const [createLoading, setCreateLoading] = useState(false)
     const [joinLoading, setJoinLoading] = useState(false)
@@ -23,6 +34,9 @@ export default function PlayGame() {
     const [contract, setContract] = useState<UnoGameContract | null>(null)
     const [games, setGames] = useState<BigInt[]>([])
     const router = useRouter()
+    const { data, error, isError, isPending, writeContract } = useWriteContract();
+
+    const contractABI = UNOContractJson.abi
 
     const socket = useRef<Socket | null>(null);
 
@@ -128,7 +142,7 @@ export default function PlayGame() {
     const setup = async () => {
         if (address) {
             try {
-                const { contract } = await getContract()
+                const { contract } = await getContract(address)
                 setContract(contract)
                 setAccount(address)
             } catch (error) {
@@ -159,8 +173,7 @@ export default function PlayGame() {
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
                             <div className='left-1/2 -translate-x-1/2 absolute bottom-4'>
-                                <ConnectButton chainStatus="icon" showBalance={true} />
-                                {/* <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={setup}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton> */}
+                                <StyledButton disabled={!ready} data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={login}>{authenticated ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
                             </div>
                         </div>
                         : <>
