@@ -41,14 +41,14 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
 
   useEffect(() => {
     if (contract) {
-      console.log("Contract initialized, calling fetchGames"); // Add this line
+      console.log("Contract initialized, calling fetchGames");
       fetchGames();
 
       if (socket.current) {
         console.log("Socket connection established");
         // Add listener for gameRoomCreated event
         socket.current.on("gameRoomCreated", () => {
-          console.log("Game room created event received"); // Add this line
+          console.log("Game room created event received");
           fetchGames();
         });
 
@@ -58,7 +58,7 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
         };
       }
     } else {
-      console.log("Contract not initialized yet"); // Add this line
+      console.log("Contract not initialized yet");
     }
   }, [contract, socket])
 
