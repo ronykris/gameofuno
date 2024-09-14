@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { ethers } from 'ethers'
 import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../../lib/types'
 import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand, getPlayerHand, createDeck } from '../../../lib/gameLogic'
-import { getContract } from '../../../lib/web3'
+import { getContract, getContractNew } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
 import { io, Socket } from 'socket.io-client'
@@ -91,7 +91,7 @@ const Game: React.FC = () => {
   useEffect(() => {
     const setup = async () => {
       if (status === 'connected' && address) {
-        const { contract } = await getContract()
+        const { contract } = await getContractNew()
         setContract(contract)
         console.log('Account: ', address, 'contract: ', contract)
         if (contract && id) {

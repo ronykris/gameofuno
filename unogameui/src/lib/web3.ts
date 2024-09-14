@@ -1,6 +1,9 @@
 import { ethers } from 'ethers'
 import { UnoGameContract } from './types'
 import UNOContractJson from '../constants/UnoGame.json'
+import * as dotenv from 'dotenv';
+
+dotenv.config()
 
 declare global {
   interface Window {
@@ -53,4 +56,44 @@ export async function getContract(address: string) {
     }
   }
   return { account: null, contract: null }
+}
+
+export async function getContractNew() {
+  try {
+    const rpcUrl = 'https://sepolia-rpc.kakarot.org';
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+    const KEY = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+    console.log(KEY)
+
+    if (!KEY) {
+      throw new Error('Something is missing');
+    }
+
+    const wallet = new ethers.Wallet(KEY, provider);
+
+    // TestNet
+    const contractAddress = '0x7e25d8b74cc92E114C9275D04C814c6Fef3E4036';
+
+    if (!contractAddress) {
+      throw new Error('Contract address is not set');
+    }
+
+    const contractABI = UNOContractJson.abi;
+
+    await verifyContract(provider, contractAddress);
+
+    const gameContract = new ethers.Contract(
+      contractAddress!,
+      contractABI,
+      wallet
+    ) as ethers.Contract & UnoGameContract;
+
+    console.log('Contract connected with wallet:', wallet.address);
+
+    return { contract: gameContract, wallet: wallet.address };
+  } catch (error) {
+    console.error('Failed to connect to contract:', error);
+    return { account: null, contract: null };
+  }
 }

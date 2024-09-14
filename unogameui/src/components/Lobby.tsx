@@ -2,7 +2,7 @@
 
 import { useState, useEffect, MutableRefObject } from 'react'
 import { useRouter } from 'next/navigation'
-import { getContract } from '../lib/web3'
+import { getContract, getContractNew } from '../lib/web3'
 import { UnoGameContract } from '../lib/types'
 import { ethers } from 'ethers'
 import { useAccount } from 'wagmi'
@@ -29,7 +29,7 @@ export default function Lobby({ socket }: { socket: MutableRefObject<any> }) {
   useEffect(() => {
     const setup = async () => {
       try {
-        const { contract } = await getContract()
+        const { contract } = await getContractNew()
         setContract(contract)
       } catch (error) {
         console.error('Failed to setup contract:', error)

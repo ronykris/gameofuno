@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../../lib/types'
 import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand, getPlayerHand, createDeck } from '../../../lib/gameLogic'
-import { getContract } from '../../../lib/web3'
+import { getContract, getContractNew } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
 import { io, Socket } from 'socket.io-client'
@@ -106,7 +106,7 @@ const Room: React.FC = () => {
     useEffect(() => {
         const setup = async () => {
             if (status === 'connected' && address) {
-                const { contract } = await getContract()
+                const { contract } = await getContractNew()
                 setContract(contract)
                 console.log('Account: ', address, 'contract: ', contract)
                 if (contract && id) {
@@ -159,7 +159,7 @@ const Room: React.FC = () => {
             const actions = await contract.getGameActions(gameId)
             for (const action of actions) {
                 const decodedAction: Action = {
-                    type: 'playCard', // This is a simplification. You'd need to properly decode the action.
+                    type: 'playCard', 
                     player: action.player,
                     cardHash: action.actionHash
                 }

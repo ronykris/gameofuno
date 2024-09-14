@@ -5,7 +5,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import TokenInfoBar from '@/components/TokenBar'
 import { UnoGameContract } from '@/lib/types';
-import { getContract } from '@/lib/web3';
+import { getContract, getContractNew } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -142,7 +142,7 @@ export default function PlayGame() {
     const setup = async () => {
         if (address) {
             try {
-                const { contract } = await getContract(address)
+                const { contract } = await getContractNew()
                 setContract(contract)
                 setAccount(address)
             } catch (error) {
