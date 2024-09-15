@@ -2,8 +2,10 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import {
     Chain,
 } from 'wagmi/chains';
+import { createConfig } from '@privy-io/wagmi';
+import { http } from 'viem';
 
-const kakarot = {
+export const kakarot = {
     id: 1802203764,
     name: 'Kakarot',
     nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
@@ -16,11 +18,9 @@ const kakarot = {
     testnet: true,
 } as const satisfies Chain;
 
-export const config = getDefaultConfig({
-    appName: 'RainbowKit App',
-    projectId: process.env.NEXT_PUBLIC_PROJECT_ID!,
-    chains: [
-        kakarot,
-    ],
-    ssr: true,
+export const config = createConfig({
+    chains: [kakarot],
+    transports: {
+        [kakarot.id]: http(),
+    },
 });

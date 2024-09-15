@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../../lib/types'
 import { applyActionToOffChainState, isValidPlay, canPlay, hashState, initializeOffChainState, hashAction, hashCard, startGame, storePlayerHand, getPlayerHand, createDeck } from '../../../lib/gameLogic'
-import { getContract } from '../../../lib/web3'
+import { getContract, getContractNew } from '../../../lib/web3'
 import GameBoard from '../../../components/GameBoard'
 import PlayerHand from '../../../components/PlayerHand'
 import { io, Socket } from 'socket.io-client'
@@ -12,6 +12,7 @@ import { updateGlobalCardHashMap, getGlobalCardHashMap } from '../../../lib/glob
 import StyledButton from '@/components/styled-button'
 import { convertBigIntsToStrings } from '@/lib/gameLogic'
 import { useAccount } from 'wagmi'
+import { Toaster, toast } from 'react-hot-toast'
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -106,7 +107,7 @@ const Room: React.FC = () => {
     useEffect(() => {
         const setup = async () => {
             if (status === 'connected' && address) {
-                const { contract } = await getContract()
+                const { contract } = await getContractNew()
                 setContract(contract)
                 console.log('Account: ', address, 'contract: ', contract)
                 if (contract && id) {
@@ -159,7 +160,7 @@ const Room: React.FC = () => {
             const actions = await contract.getGameActions(gameId)
             for (const action of actions) {
                 const decodedAction: Action = {
-                    type: 'playCard', // This is a simplification. You'd need to properly decode the action.
+                    type: 'playCard',
                     player: action.player,
                     cardHash: action.actionHash
                 }
@@ -218,8 +219,10 @@ const Room: React.FC = () => {
         const newState = applyActionToOffChainState(offChainGameState, action)
         const actionHash = hashAction(action)
 
+        const toastId = toast.loading('Playing card...')
+
         try {
-            const tx = await contract.submitAction(gameId, actionHash)
+            const tx = await contract.submitAction(gameId, actionHash, account)
             await tx.wait()
             setOffChainGameState(newState)
 
@@ -227,9 +230,11 @@ const Room: React.FC = () => {
             const roomId = `game-${id.toString()}`;
             socket.current.emit('playCard', { roomId, action, newState: convertBigIntsToStrings(newState) });
 
+            toast.success('Card played successfully!', { id: toastId })
         } catch (error) {
             console.error('Error playing card:', error)
             setError('Failed to submit action. Please try again.')
+            toast.error('Failed to play card. Please try again.', { id: toastId })
         }
     }
 
@@ -239,13 +244,15 @@ const Room: React.FC = () => {
 
         const action = { type: 'startGame' as ActionType, player: account }
 
-        // Optimistically update the local state
-        const newOffChainState = applyActionToOffChainState(offChainGameState, action)
-        setOffChainGameState(newOffChainState)
+        const toastId = toast.loading('Drawing card...')
 
         try {
+            // Optimistically update the local state
+            const newOffChainState = applyActionToOffChainState(offChainGameState, action)
+            setOffChainGameState(newOffChainState)
+
             const actionHash = hashState(newOffChainState)
-            const tx = await contract.submitAction(gameId!, actionHash)
+            const tx = await contract.submitAction(gameId!, actionHash, account)
 
             // Add to pending actions
             setPendingActions(prev => [...prev, { action, txHash: tx.hash }])
@@ -258,10 +265,13 @@ const Room: React.FC = () => {
 
             // Fetch latest state after confirmation
             await fetchGameState(contract, BigInt(id as string), account)
+
+            toast.success('Card drawn successfully!', { id: toastId })
         } catch (error) {
             console.error('Error drawing card:', error)
             // Revert the optimistic update
             await fetchGameState(contract, BigInt(id as string), account)
+            toast.error('Failed to draw card. Please try again.', { id: toastId })
         }
     }
 
@@ -271,6 +281,16 @@ const Room: React.FC = () => {
 
     return (
         <>
+            <Toaster
+                position="bottom-center"
+                toastOptions={{
+                    duration: 3000,
+                    style: {
+                        background: '#363636',
+                        color: '#fff',
+                    },
+                }}
+            />
             <div className='hidden scale-[0.975]'></div>
             <div className='transition-transform relative w-full max-w-[1280px] h-[720px] m-20 mt-10 mx-auto bg-[url("/bg-3.jpg")] select-none rounded-3xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]' >
                 {/* <PlayerPanel></PlayerPanel> */}
