@@ -70,6 +70,7 @@ export async function reconstructOffChainState(
     }
   }
 
+  /*
   export async function submitAction(
     contract: UnoGameContract, 
     gameId: bigint, 
@@ -87,6 +88,7 @@ export async function reconstructOffChainState(
     const tx = await contract.submitAction(
       gameId,
       actionHash,
+      action.player
     );
   
     await tx.wait();
@@ -97,7 +99,7 @@ export async function reconstructOffChainState(
     }
     localActionCache[gameId.toString()].push(action);
     
-  }
+  }*/
 
   export function getPlayerHand(gameId: bigint, playerAddress: string): Card[] {
     const gameHands = localPlayerHands[gameId.toString()];
