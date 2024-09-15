@@ -101,7 +101,7 @@ export default function PlayGame() {
             try {
                 setCreateLoading(true)
                 console.log('Creating game...')
-                const tx = await contract.createGame(account as `0x${string}`| undefined)
+                const tx = await contract.createGame(account as `0x${string}` | undefined)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
                 console.log('Game created successfully')
@@ -125,7 +125,7 @@ export default function PlayGame() {
                 setJoinLoading(true)
                 console.log(`Joining game ${gameId.toString()}...`)
                 const gameIdBigint = BigInt(gameId.toString())
-                const tx = await contract.joinGame(gameIdBigint, account as `0x${string}`| undefined)
+                const tx = await contract.joinGame(gameIdBigint, account as `0x${string}` | undefined)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
 
@@ -178,6 +178,7 @@ export default function PlayGame() {
                         </div>
                         : <>
                             <StyledButton onClick={() => createGame()} className='w-fit bg-[#00b69a] bottom-4 text-2xl my-3 mx-auto'>{createLoading == true ? 'Creating...' : 'Create Game Room'}</StyledButton>
+                            <p className='text-white text-sm font-mono'>Note: Don't join the room where game is already started</p>
                             {joinLoading == true && <div className='text-white mt-2 text-2xl shadow-lg'>Wait, while we are joining your game room...</div>}
                             <h2 className="text-2xl font-bold mb-4 text-white">Active Game Rooms:</h2>
                             <ScrollArea className="h-[620px] rounded-md border border-gray-200 bg-white p-4">
