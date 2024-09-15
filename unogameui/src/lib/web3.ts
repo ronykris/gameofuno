@@ -71,7 +71,7 @@ export async function getContractNew() {
     const wallet = new ethers.Wallet(KEY, provider);
 
     // TestNet
-    const contractAddress = '0x4E5059C9Dad07d89C387e951F47eb0853e38B87b';
+    const contractAddress = '0x2fD9d1df16Be8773427De40Bef48BD6B48477D39';
     if (!contractAddress) {
       throw new Error('Contract address is not set');
     }

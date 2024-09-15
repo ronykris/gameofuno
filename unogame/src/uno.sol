@@ -53,7 +53,7 @@ contract UnoGame is ReentrancyGuard {
             isStarted: false
         });
         _activeGames.push(newGameId);
-        emit GameCreated(newGameId, msg.sender);
+        emit GameCreated(newGameId, _creator);
         return newGameId;
     }
 
