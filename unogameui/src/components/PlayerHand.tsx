@@ -10,7 +10,7 @@ interface PlayerHandProps {
 export default function PlayerHand({ hand, onCardPlay }: PlayerHandProps) {
   console.log('Player hand (hashes):', hand);
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 justify-center">
       {hand.map((cardHash, index) => {
         const card = getCardFromHash(cardHash)
         console.log(`Card ${index}:`, { hash: cardHash, card });

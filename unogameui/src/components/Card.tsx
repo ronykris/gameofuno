@@ -9,7 +9,7 @@ export default function Card({ card, onClick }: CardProps) {
 
   return (
     <div
-      className={`w-20 h-32 rounded-lg flex items-center justify-center cursor-pointer transform hover:scale-110 transition-transform overflow-hidden`}
+      className={`w-16 h-24 sm:w-20 sm:h-32 rounded-lg flex items-center justify-center cursor-pointer transform hover:scale-110 transition-transform overflow-hidden`}
       onClick={onClick}
     >
       <img
