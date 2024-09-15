@@ -48,7 +48,7 @@ export interface Action {
 }
 
 export interface UnoGameContract {
-  createGame: (address: `0x${string}` | undefined) => Promise<any>;
+  createGame: (account: `0x${string}` | undefined) => Promise<any>;
   joinGame: (gameId: bigint, address: `0x${string}`| undefined) => Promise<any>;
   startGame: (gameId: bigint, initialStateHash: string) => Promise<any>;
   submitAction: (gameId: bigint, actionHash: string, account: string) => Promise<any>;
