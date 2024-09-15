@@ -158,7 +158,7 @@ export default function PlayGame() {
             setAccount(null)
             setContract(null)
         }
-    }, [status, address])
+    }, [status, address, authenticated])
 
     return (
         <div className='relative'>
@@ -169,7 +169,7 @@ export default function PlayGame() {
                     <div className='absolute -left-8 right-8 -top-14 bottom-14 bg-no-repeat bg-[url("/card-0.png")] animate-pulse'></div>
                 </div>
                 <div className='absolute top-0 md:left-1/2 md:right-0 bottom-0 w-[calc(100%-2rem)] md:w-auto md:pr-20 py-12'>
-                    {!account ?
+                    {!address ?
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
                             <div className='left-1/2 -translate-x-1/2 absolute bottom-4'>

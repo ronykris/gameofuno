@@ -10,7 +10,7 @@ dependencies:
     version: 1.83.1(@babel/core@7.25.2)(@types/react@18.3.5)(react-dom@18.3.1)(react-is@18.3.1)(react@18.3.1)(typescript@5.5.4)
   '@privy-io/wagmi':
     specifier: ^0.2.12
-    version: 0.2.12(@privy-io/react-auth@1.83.1)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.10)
+    version: 0.2.12(@privy-io/react-auth@1.83.1)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.11)
   '@radix-ui/react-avatar':
     specifier: ^1.1.0
     version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)
@@ -25,7 +25,7 @@ dependencies:
     version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)
   '@rainbow-me/rainbowkit':
     specifier: ^2.1.6
-    version: 2.1.6(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.10)
+    version: 2.1.6(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.11)
   '@splinetool/react-spline':
     specifier: ^4.0.0
     version: 4.0.0(@splinetool/runtime@1.9.24)(next@14.2.7)(react-dom@18.3.1)(react@18.3.1)
@@ -65,6 +65,9 @@ dependencies:
   react-dom:
     specifier: ^18
     version: 18.3.1(react@18.3.1)
+  react-hot-toast:
+    specifier: ^2.4.1
+    version: 2.4.1(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
   react-icons:
     specifier: ^5.3.0
     version: 5.3.0(react@18.3.1)
@@ -81,8 +84,8 @@ dependencies:
     specifier: 2.x
     version: 2.21.5(typescript@5.5.4)
   wagmi:
-    specifier: ^2.12.10
-    version: 2.12.10(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
+    specifier: ^2.12.11
+    version: 2.12.11(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
 
 devDependencies:
   '@types/crypto-js':
@@ -2438,7 +2441,7 @@ packages:
     dependencies:
       '@ethereumjs/tx': 4.2.0
       '@metamask/superstruct': 3.1.0
-      '@noble/hashes': 1.3.2
+      '@noble/hashes': 1.5.0
       '@scure/base': 1.1.8
       '@types/debug': 4.1.12
       debug: 4.3.6(supports-color@5.5.0)
@@ -2929,7 +2932,7 @@ packages:
       - zod
     dev: false
 
-  /@privy-io/wagmi@0.2.12(@privy-io/react-auth@1.83.1)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.10):
+  /@privy-io/wagmi@0.2.12(@privy-io/react-auth@1.83.1)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.11):
     resolution: {integrity: sha512-MJQVnrsA1BVT4SUOLCGiDB58qj0JvEaXBSle7R8yTXtmLuEfsRsXZTA9b0CKMe9wGUQfX4U6BligLBZBhreT0Q==}
     peerDependencies:
       '@privy-io/react-auth': ^1.64.1
@@ -2942,7 +2945,7 @@ packages:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       viem: 2.21.5(typescript@5.5.4)
-      wagmi: 2.12.10(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
+      wagmi: 2.12.11(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
     dev: false
 
   /@radix-ui/number@1.1.0:
@@ -3287,7 +3290,7 @@ packages:
       react: 18.3.1
     dev: false
 
-  /@rainbow-me/rainbowkit@2.1.6(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.10):
+  /@rainbow-me/rainbowkit@2.1.6(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react@18.3.1)(viem@2.21.5)(wagmi@2.12.11):
     resolution: {integrity: sha512-DCt6VYuPPxcPY6veuSOa784mHHHN0uSdDBTivdUBssmjTwHMmOrEs6kuKSYTPRu8EAwA1AvIc+ulSVnS022nbg==}
     engines: {node: '>=12.4'}
     peerDependencies:
@@ -3308,7 +3311,7 @@ packages:
       react-remove-scroll: 2.6.0(@types/react@18.3.5)(react@18.3.1)
       ua-parser-js: 1.0.38
       viem: 2.21.5(typescript@5.5.4)
-      wagmi: 2.12.10(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
+      wagmi: 2.12.11(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5)
     transitivePeerDependencies:
       - '@types/react'
       - babel-plugin-macros
@@ -5937,7 +5940,7 @@ packages:
     resolution: {integrity: sha512-an2S5quJMiy5bnZKEf6AkfH/7r8CzHvhchU40gxN+OM6HPhe7Z9T1FUychcf2M9PpPOO0Hf7BAEfJkw2TDIBDw==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      readable-stream: 3.6.2
+      readable-stream: 4.5.2
       webextension-polyfill: 0.10.0
     dev: false
 
@@ -6208,6 +6211,14 @@ packages:
   /globals@11.12.0:
     resolution: {integrity: sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==}
     engines: {node: '>=4'}
+    dev: false
+
+  /goober@2.1.14(csstype@3.1.3):
+    resolution: {integrity: sha512-4UpC0NdGyAFqLNPnhCT2iHpza2q+RAY3GV85a/mRPdzyPQMsj0KmMMuetdIkzWRbJ+Hgau1EZztq8ImmiMGhsg==}
+    peerDependencies:
+      csstype: ^3.0.10
+    dependencies:
+      csstype: 3.1.3
     dev: false
 
   /gopd@1.0.1:
@@ -8217,6 +8228,20 @@ packages:
       scheduler: 0.23.2
     dev: false
 
+  /react-hot-toast@2.4.1(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-j8z+cQbWIM5LY37pR6uZR6D4LfseplqnuAO4co4u8917hBUvXlEqyP1ZzqVLcqoyUesZZv/ImreoCeHVDpE5pQ==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16'
+      react-dom: '>=16'
+    dependencies:
+      goober: 2.1.14(csstype@3.1.3)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - csstype
+    dev: false
+
   /react-icons@5.3.0(react@18.3.1):
     resolution: {integrity: sha512-DnUk8aFbTyQPSkCfF8dbX6kQjXA9DktMeJqfjrg6cK9vwQVMxmcA3BfP4QoiztVmEHtwlTgLFsPuH2NskKT6eg==}
     peerDependencies:
@@ -9521,8 +9546,8 @@ packages:
     resolution: {integrity: sha512-gQpnTgkubC6hQgdIcRdYGDSDc+SaujOdyesZQMv6JlfQee/9Mp0Qhnys6WxDWvQnL5WZdT7o2Ul187aSt0Rq+w==}
     dev: false
 
-  /wagmi@2.12.10(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5):
-    resolution: {integrity: sha512-aSG0fW+Kft62syxAWkmSaMku5CZRW6Q2lsu64bLvLLVyZgZMt8+qQRdYk8WcFFdBzivkuDMRMREMxw7dwdImkw==}
+  /wagmi@2.12.11(@tanstack/react-query@5.55.4)(@types/react@18.3.5)(react-dom@18.3.1)(react-native@0.75.2)(react@18.3.1)(typescript@5.5.4)(viem@2.21.5):
+    resolution: {integrity: sha512-CtK05Hl5nKVskiwvNEtxMIAMJwI8RF+6qwVqlhypDs+Y1c30gVnNnF7ivAuVs4xzJbAsZ5LUmsrVVxUMIC0KDg==}
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
       react: '>=18'
