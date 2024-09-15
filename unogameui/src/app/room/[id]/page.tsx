@@ -297,7 +297,12 @@ const Room: React.FC = () => {
                 {offChainGameState && onChainGameState && (
                     <div className='flex flex-col items-center justify-center mt-20 px-2'>
                         {!offChainGameState.isStarted && !onChainGameState.isStarted ? (
-                            <StyledButton onClick={handleStartGame} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Start Game </StyledButton>
+                            <>
+                                <StyledButton onClick={handleStartGame} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Start Game </StyledButton>
+                                <p className='text-xl mt-4 text-white text-center'>
+                                    Note: Please wait for another player to join before starting. This game is designed for two players.
+                                </p>
+                            </>
                         ) : (
                             <div>
                                 <GameBoard

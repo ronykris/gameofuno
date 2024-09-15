@@ -25,7 +25,7 @@ export default function GameBoard({ currentCardHash, players, currentPlayerIndex
           No card
         </div>
       )}
-      <div className="mt-4">
+      <div className="mt-4 text-white text-sm md:text-lg">
         {players.map((player, index) => (
           <div key={player} className={`${index === currentPlayerIndex ? 'font-bold' : ''}`}>
             {player}
