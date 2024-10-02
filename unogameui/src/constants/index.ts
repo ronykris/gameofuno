@@ -4,6 +4,11 @@ export const socials = [
     url: '/github.png',
     link: 'https://github.com/ronykris/gameofuno'
   },
+  {
+    name: 'X',
+    url: '/x.png',
+    link: 'https://x.com/zk_UNO?s=09'
+  },
 ];
 
 export const exploreWorlds = [
