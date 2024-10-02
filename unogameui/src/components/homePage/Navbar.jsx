@@ -25,7 +25,7 @@ const Navbar = () => {
         className={`w-full 2xl:max-w-[1280px] mx-auto flex justify-between gap-8`}
       >
         <h2 className="font-extrabold text-[24px] leading-[30.24px] text-white">
-           Karo
+           zkUNO
         </h2>
         <StyledButton onClick={() => router.push("/play")} roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl'>Start Game</StyledButton>
       </div>

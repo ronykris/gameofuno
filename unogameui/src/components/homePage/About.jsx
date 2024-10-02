@@ -22,7 +22,7 @@ const About = () => (
                 variants={fadeIn('up', 'tween', 0.2, 1)}
                 className="mt-[8px] font-normal sm:text-[32px] text-[20px] text-center text-secondary-white"
             >
-                Zero-Knowledge UNO (Karo) is a cutting-edge, multiplayer digital adaptation of the classic UNO game, now enhanced with advanced Zero-Knowledge Proofs (ZKPs) technology to ensure privacy, fairness, and security in every game. Whether you're a casual player or a competitive strategist,  Karo offers a revolutionary gaming experience that combines the fun of UNO with the power of blockchain technology
+                Zero-Knowledge UNO is a cutting-edge, multiplayer digital adaptation of the classic UNO game, now enhanced with advanced Zero-Knowledge Proofs (ZKPs) technology to ensure privacy, fairness, and security in every game. Whether you're a casual player or a competitive strategist,  It offers a revolutionary gaming experience that combines the fun of UNO with the power of blockchain technology
 
             </motion.p>
 
