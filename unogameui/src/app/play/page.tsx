@@ -14,12 +14,6 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useWriteContract } from 'wagmi';
 import UNOContractJson from '@/constants/UnoGame.json'
 import { createPublicClient, createWalletClient, http } from 'viem'
-import { kakarot } from '@/lib/wagmi';
-
-const walletClient = createWalletClient({
-    chain: kakarot,
-    transport: http('https://sepolia-rpc.kakarot.org')
-})
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 

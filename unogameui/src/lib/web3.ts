@@ -23,7 +23,7 @@ export async function getContract(address: string) {
   if (typeof window !== 'undefined' && window.ethereum) {
     try {
       // await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const provider = new ethers.JsonRpcProvider('https://sepolia-rpc.kakarot.org')
+      const provider = new ethers.JsonRpcProvider('https://sepolia-rollup.arbitrum.io/rpc')
 
       // const network = await provider.getNetwork()
       // console.log('Connected to network:', network.name, 'Chain ID:', network.chainId)
@@ -60,7 +60,7 @@ export async function getContract(address: string) {
 
 export async function getContractNew() {
   try {
-    const rpcUrl = 'https://sepolia-rpc.kakarot.org';
+    const rpcUrl = 'https://sepolia-rollup.arbitrum.io/rpc';
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
     const KEY = process.env.NEXT_PUBLIC_PRIVATE_KEY;
@@ -71,7 +71,7 @@ export async function getContractNew() {
     const wallet = new ethers.Wallet(KEY, provider);
 
     // TestNet
-    const contractAddress = '0x2fD9d1df16Be8773427De40Bef48BD6B48477D39';
+    const contractAddress = '0xd22DbC2094e07230E781B9914D409C69B0389cef';
     if (!contractAddress) {
       throw new Error('Contract address is not set');
     }

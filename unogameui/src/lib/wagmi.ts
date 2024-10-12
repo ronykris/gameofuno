@@ -5,22 +5,22 @@ import {
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'viem';
 
-export const kakarot = {
-    id: 1802203764,
-    name: 'Kakarot',
+export const arbitriumSepolia = {
+    id: 421614,
+    name: 'Arbitrum Sepolia',
     nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
     rpcUrls: {
-        default: { http: ['https://sepolia-rpc.kakarot.org'] },
+        default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] },
     },
     blockExplorers: {
-        default: { name: 'kakarotscan', url: 'https://sepolia.kakarotscan.org/' },
+        default: { name: 'arbiscan', url: 'https://sepolia.arbiscan.io' },
     },
     testnet: true,
 } as const satisfies Chain;
 
 export const config = createConfig({
-    chains: [kakarot],
+    chains: [arbitriumSepolia],
     transports: {
-        [kakarot.id]: http(),
+        [arbitriumSepolia.id]: http(),
     },
 });

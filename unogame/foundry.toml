@@ -5,6 +5,6 @@ libs = ["lib"]
 remappings = ["@openzeppelin/=lib/openzeppelin-contracts/"]
 
 [rpc_endpoints]
-kakarot_sepolia = "${KAKAROT_SEPOLIA_RPC_URL}"
+arbitrum_sepolia = "https://sepolia-rollup.arbitrum.io/rpc"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
