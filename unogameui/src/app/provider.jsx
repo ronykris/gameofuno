@@ -18,7 +18,7 @@ export function Providers({ children }) {
         appearance: {
           theme: 'light',
           accentColor: '#ed5f1c',
-          logo: 'https://your-logo-url',
+          logo: 'https://www.zkuno.xyz/logo.jpg',
         },
         // Create embedded wallets for users who don't have a wallet
         embeddedWallets: {
