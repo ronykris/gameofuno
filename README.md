@@ -1,11 +1,11 @@
 ## Project Description
-We have developed a decentralized UNO card game leveraging Kakarot (a zkevm built usiing cairo). By utilizing Kakarot for its robust blockchain capabilities and a privacy layer we have built a secure and transparent card gaming environment that adheres to the principles of Web3.
+We have developed a decentralized UNO card game. By utilizing arbitrium for its robust blockchain capabilities and privacy we have built a secure and transparent card gaming environment that adheres to the principles of Web3.
 
 ### Problem: 
 Traditional online card games suffer from trust issues where players doubt the fairness of the game. Centralized platforms often have control over the game mechanics, leading to potential manipulation or lack of transparency. Additionally, the visibility of players’ hands and decks can compromise the integrity of the game, as some players might gain an unfair advantage.
 
 ### Solution: 
-Our UNO card game, built on the Kakarot blockchain with a privacy layer addresses these concerns by ensuring that all game mechanics are decentralized and transparent, while the privacy layer guarantees that players' hands and the deck remain hidden. This ensures that no player can gain an unfair advantage, and the integrity of the game is preserved. The integration of a commit-and-reveal mechanism further ensures that all moves are verifiable without compromising privacy.
+Our UNO card game, built on the arbitrium blockchain with a privacy layer addresses these concerns by ensuring that all game mechanics are decentralized and transparent, while the privacy layer guarantees that players' hands and the deck remain hidden. This ensures that no player can gain an unfair advantage, and the integrity of the game is preserved. The integration of a commit-and-reveal mechanism further ensures that all moves are verifiable without compromising privacy.
 
 Detailed Project Description The project consists of several key components that ensure a secure, transparent, and fair gaming experience:
 
@@ -30,9 +30,9 @@ Deck Shuffling and Initial State Generation: The deck is shuffled in a cryptogra
 Ensuring Fairness: A commit-and-reveal scheme is used to prevent cheating. Players first commit to their actions (e.g., the card they intend to play) by submitting a hash. After all commitments are made, they reveal their actions. This prevents any player from changing their action based on others' actions.
 
 ## How it's Made
-The decentralized UNO card game is technically built with a combination of Kakarot blockchain and a privacy layer, utilizing several key technologies to ensure fairness, privacy, and transparency.
+The decentralized UNO card game is technically built on arbitrium, utilizing several key technologies to ensure fairness, privacy, and transparency.
 
-Smart Contracts: The game logic (card dealing, turn management, action validation) is written in Solidity smart contracts on the Kakarot blockchain. This ensures all actions are publicly verifiable, immutable, and tamper-proof.
+Smart Contracts: The game logic (card dealing, turn management, action validation) is written in Solidity smart contracts on the Arbitrium blockchain. This ensures all actions are publicly verifiable, immutable, and tamper-proof.
 
 Game State Management: Each player's turn, remaining cards, and game state transitions are stored and managed on-chain. Updates to the game state occur after every validated player action.
 
