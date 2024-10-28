@@ -13,6 +13,7 @@ import StyledButton from '@/components/styled-button'
 import { convertBigIntsToStrings } from '@/lib/gameLogic'
 import { useAccount } from 'wagmi'
 import { Toaster, toast } from 'react-hot-toast'
+import Header from './header'
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -276,7 +277,26 @@ const Room: React.FC = () => {
     }
 
     if (!account || !contract || !onChainGameState || !offChainGameState) {
-        return <div>Loading...</div>
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="loader"></div>
+                <style jsx>{`
+                .loader {
+                border: 5px solid #f3f3f3;
+                border-top: 5px solid #6f03fc;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 2s linear infinite;
+                }
+
+                @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+                }
+            `}</style>
+            </div>
+        );
     }
 
     return (
@@ -293,7 +313,7 @@ const Room: React.FC = () => {
             />
             <div className='hidden scale-[0.975]'></div>
             <div className='transition-transform relative w-full max-w-[1280px] h-[720px] m-20 mt-10 mx-auto bg-[url("/bg-3.jpg")] select-none rounded-3xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)]' >
-                {/* <PlayerPanel></PlayerPanel> */}
+                <Header />
                 {offChainGameState && onChainGameState && (
                     <div className='flex flex-col items-center justify-center mt-20 px-2'>
                         {!offChainGameState.isStarted && !onChainGameState.isStarted ? (

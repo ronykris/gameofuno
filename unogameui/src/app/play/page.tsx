@@ -8,7 +8,6 @@ import { UnoGameContract } from '@/lib/types';
 import { getContract, getContractNew } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWriteContract } from 'wagmi';
