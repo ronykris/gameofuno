@@ -2,7 +2,6 @@
 
 import TokenInfoBar from '@/components/TokenBar'
 import { SoundProvider } from '../../../context/SoundProvider'
-import Header from './header'
 
 export default function RootLayout({
   children,
