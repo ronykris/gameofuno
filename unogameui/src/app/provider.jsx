@@ -11,7 +11,6 @@ const queryClient = new QueryClient();
 
 export function Providers({ children }) {
 
-  init();
 
   return (
     <PrivyProvider
