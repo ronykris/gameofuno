@@ -26,6 +26,16 @@ const About = () => (
 
             </motion.p>
 
+            <TypingText title="| Partners" textStyles="text-center mt-16" />
+
+            <motion.p
+                variants={fadeIn('up', 'tween', 0.2, 1)}
+                className="mt-[8px] w-64 font-normal text-center text-secondary-white"
+            >
+                <img src="/diamante_logo.png"/>
+
+            </motion.p>
+
             <motion.img
                 variants={fadeIn('up', 'tween', 0.3, 1)}
                 src="/arrow-down.svg"
