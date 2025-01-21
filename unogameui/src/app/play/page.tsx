@@ -12,7 +12,7 @@ import { useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWriteContract } from 'wagmi';
 import UNOContractJson from '@/constants/UnoGame.json'
-import { useLaunchParams } from '@telegram-apps/sdk-react';
+// import { useLaunchParams } from '@telegram-apps/sdk-react';
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -27,7 +27,7 @@ export default function PlayGame() {
     const [contract, setContract] = useState<UnoGameContract | null>(null)
     const [games, setGames] = useState<BigInt[]>([])
     const router = useRouter()
-    const lp = useLaunchParams();
+    // const lp = useLaunchParams();
 
     const socket = useRef<Socket | null>(null);
 
@@ -160,7 +160,7 @@ export default function PlayGame() {
                     <div className='absolute -left-8 right-8 -top-14 bottom-14 bg-no-repeat bg-[url("/card-0.png")] animate-pulse'></div>
                 </div>
                 <div className='absolute top-0 md:left-1/2 md:right-0 bottom-0 w-[calc(100%-2rem)] md:w-auto md:pr-20 py-12'>
-                    <div className='text-[#ffffff] font-bold text-4xl text-shadow-md mb-2'>Hello {lp.initData?.user?.firstName ?? "User"},</div>
+                    {/* <div className='text-[#ffffff] font-bold text-4xl text-shadow-md mb-2'>Hello {lp.initData?.user?.firstName ?? "User"},</div> */}
                     {!address ?
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
