@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`bg-cover bg-[url("/bg.png")] ${inter.className}`}>
+      <body className={`bg-auto bg-[url("/bg.png")] ${inter.className}`}>
         <Providers>
           {children}
         </Providers>

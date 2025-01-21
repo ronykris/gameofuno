@@ -1,15 +1,18 @@
 'use client';
 
 import '@rainbow-me/rainbowkit/styles.css';
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { config } from "../lib/wagmi";
 import { PrivyProvider } from '@privy-io/react-auth';
 import { WagmiProvider } from '@privy-io/wagmi';
+import { init } from '@telegram-apps/sdk-react';
 
 const queryClient = new QueryClient();
 
 export function Providers({ children }) {
+
+  init();
+
   return (
     <PrivyProvider
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID}
