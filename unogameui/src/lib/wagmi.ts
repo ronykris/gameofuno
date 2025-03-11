@@ -2,7 +2,7 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import {
     Chain,
 } from 'wagmi/chains';
-import { createConfig } from '@privy-io/wagmi';
+import { createConfig } from 'wagmi';
 import { http } from 'viem';
 
 export const arbitriumSepolia = {
