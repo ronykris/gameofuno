@@ -6,162 +6,218 @@ import "../src/uno.sol";
 
 contract UnoGameTest is Test {
     UnoGame unoGame;
-    address[10] players;
+    bytes32[10] players;
 
     function setUp() public {
         unoGame = new UnoGame();
-        for(uint i = 0; i < 10; i++) {
-            players[i] = address(uint160(i + 1));
+        for (uint i = 0; i < 10; i++) {
+            players[i] = bytes32(uint256(i + 1));
         }
     }
 
     function testCreateGame() public {
-        vm.prank(players[0]);
-        uint256 gameId = unoGame.createGame();
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
         assertEq(gameId, 1, "First game should have ID 1");
 
-        (address[] memory gamePlayers, bool isActive, , , , , ,) = unoGame.getGameState(gameId);
+        (
+            uint256 id,
+            bytes32[] memory gamePlayers,
+            UnoGame.GameStatus status,
+            ,
+            ,
+            ,
+
+        ) = unoGame.getGame(gameId);
+
+        assertEq(id, gameId, "Game ID should match");
         assertEq(gamePlayers.length, 0, "Game should start with no players");
-        assertTrue(isActive, "Game should be active");
+        assertEq(
+            uint(status),
+            uint(UnoGame.GameStatus.NotStarted),
+            "Game should be in NotStarted status"
+        );
     }
 
     function testJoinGame() public {
-        uint256 gameId = unoGame.createGame();
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        vm.prank(players[0]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        vm.prank(players[1]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
 
-        (address[] memory gamePlayers, , , , , , ,) = unoGame.getGameState(gameId);
+        (, bytes32[] memory gamePlayers, , , , , ) = unoGame.getGame(gameId);
+
         assertEq(gamePlayers.length, 2, "Game should have 2 players");
-        assertEq(gamePlayers[0], players[0], "First player should be players[0]");
-        assertEq(gamePlayers[1], players[1], "Second player should be players[1]");
+        assertEq(
+            gamePlayers[0],
+            players[0],
+            "First player should be players[0]"
+        );
+        assertEq(
+            gamePlayers[1],
+            players[1],
+            "Second player should be players[1]"
+        );
     }
 
     function testCannotJoinFullGame() public {
-        uint256 gameId = unoGame.createGame();
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        for(uint i = 0; i < 10; i++) {
-            vm.prank(players[i]);
-            unoGame.joinGame(gameId);
+        for (uint i = 0; i < 10; i++) {
+            vm.prank(address(uint160(uint256(players[i]))));
+            unoGame.joinGame(gameId, players[i]);
         }
 
         vm.expectRevert("Game is full");
         vm.prank(address(0x100));
-        unoGame.joinGame(gameId);
+        unoGame.joinGame(gameId, bytes32(uint256(0x100)));
     }
 
-    function testSubmitAction() public {
-        uint256 gameId = unoGame.createGame();
+    function testStartGame() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        vm.prank(players[0]);
-        unoGame.joinGame(gameId);
-        vm.prank(players[1]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        bytes32 actionHash = keccak256("action1");
-        vm.prank(players[0]);
-        unoGame.submitAction(gameId, actionHash, false, false, false, false);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
 
-        UnoGame.Action[] memory actions = unoGame.getGameActions(gameId);
-        assertEq(actions.length, 1, "Should have 1 action");
-        assertEq(actions[0].player, players[0], "Action should be from players[0]");
-        assertEq(actions[0].actionHash, actionHash, "Action hash should match");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.startGame(gameId);
+
+        (, , UnoGame.GameStatus status, , , , ) = unoGame.getGame(gameId);
+
+        assertEq(
+            uint(status),
+            uint(UnoGame.GameStatus.Started),
+            "Game should be in Started status"
+        );
     }
 
-    function testCannotSubmitActionWhenNotYourTurn() public {
-        uint256 gameId = unoGame.createGame();
+    function testCannotStartGameWithLessThanTwoPlayers() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        vm.prank(players[0]);
-        unoGame.joinGame(gameId);
-        vm.prank(players[1]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        bytes32 actionHash = keccak256("action1");
-        vm.prank(players[1]);
-        vm.expectRevert("Not your turn");
-        unoGame.submitAction(gameId, actionHash, false, false, false, false);
+        vm.expectRevert("Not enough players");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.startGame(gameId);
     }
 
-    function testUpdateGameStateNormal() public {
-        uint256 gameId = unoGame.createGame();
+    function testCommitMove() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        for(uint i = 0; i < 3; i++) {
-            vm.prank(players[i]);
-            unoGame.joinGame(gameId);
-        }
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        bytes32 actionHash = keccak256("action1");
-        vm.prank(players[0]);
-        unoGame.submitAction(gameId, actionHash, false, false, false, false);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
 
-        (, , uint256 currentPlayerIndex, , , uint256 turnCount, ,) = unoGame.getGameState(gameId);
-        assertEq(currentPlayerIndex, 1, "Current player should be the second player");
-        assertEq(turnCount, 1, "Turn count should be 1");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.startGame(gameId);
+
+        bytes32 moveHash = keccak256("move1");
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.commitMove(gameId, moveHash);
+
+        (, , , , , , bytes32[] memory moves) = unoGame.getGame(gameId);
+
+        assertEq(moves.length, 1, "Should have 1 move");
+        assertEq(moves[0], moveHash, "Move hash should match");
     }
 
-    function testUpdateGameStateReverse() public {
-        uint256 gameId = unoGame.createGame();
+    function testCannotCommitMoveWhenGameNotStarted() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        for(uint i = 0; i < 3; i++) {
-            vm.prank(players[i]);
-            unoGame.joinGame(gameId);
-        }
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        bytes32 actionHash = keccak256("action1");
-        vm.prank(players[0]);
-        unoGame.submitAction(gameId, actionHash, true, false, false, false);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
 
-        (, , uint256 currentPlayerIndex, , , uint256 turnCount, bool directionClockwise,) = unoGame.getGameState(gameId);
-        assertEq(currentPlayerIndex, 2, "Current player should be the third player");
-        assertEq(turnCount, 1, "Turn count should be 1");
-        assertFalse(directionClockwise, "Direction should be counter-clockwise");
-    }
-
-    function testUpdateGameStateSkip() public {
-        uint256 gameId = unoGame.createGame();
-
-        for(uint i = 0; i < 3; i++) {
-            vm.prank(players[i]);
-            unoGame.joinGame(gameId);
-        }
-
-        bytes32 actionHash = keccak256("action1");
-        vm.prank(players[0]);
-        unoGame.submitAction(gameId, actionHash, false, true, false, false);
-
-        (, , uint256 currentPlayerIndex, , , uint256 turnCount, ,) = unoGame.getGameState(gameId);
-        assertEq(currentPlayerIndex, 2, "Current player should be the third player");
-        assertEq(turnCount, 1, "Turn count should be 1");
+        bytes32 moveHash = keccak256("move1");
+        vm.expectRevert("Game is not in the required status");
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.commitMove(gameId, moveHash);
     }
 
     function testEndGame() public {
-        uint256 gameId = unoGame.createGame();
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        vm.prank(players[0]);
-        unoGame.joinGame(gameId);
-        vm.prank(players[1]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        vm.prank(players[0]);
-        unoGame.endGame(gameId);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
 
-        (,bool isActive, , , , , ,) = unoGame.getGameState(gameId);
-        assertFalse(isActive, "Game should not be active");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.startGame(gameId);
+
+        bytes32 gameHash = keccak256("gameHash");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.endGame(gameId, gameHash);
+
+        (, , UnoGame.GameStatus status, , , , ) = unoGame.getGame(gameId);
+
+        assertEq(
+            uint(status),
+            uint(UnoGame.GameStatus.Ended),
+            "Game should be in Ended status"
+        );
     }
 
-    function testCannotEndGameWhenNotYourTurn() public {
-        uint256 gameId = unoGame.createGame();
+    function testCannotEndGameWhenNotStarted() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId = unoGame.createGame(creator);
 
-        vm.prank(players[0]);
-        unoGame.joinGame(gameId);
-        vm.prank(players[1]);
-        unoGame.joinGame(gameId);
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId, players[0]);
 
-        vm.prank(players[1]);
-        vm.expectRevert("Not your turn");
-        unoGame.endGame(gameId);
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId, players[1]);
+
+        bytes32 gameHash = keccak256("gameHash");
+        vm.expectRevert("Game is not in the required status");
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.endGame(gameId, gameHash);
+    }
+
+    function testGetActiveGames() public {
+        bytes32 creator = players[0];
+        vm.prank(address(uint160(uint256(creator))));
+        uint256 gameId1 = unoGame.createGame(creator);
+
+        vm.prank(address(uint160(uint256(players[0]))));
+        unoGame.joinGame(gameId1, players[0]);
+
+        vm.prank(address(uint160(uint256(players[1]))));
+        unoGame.joinGame(gameId1, players[1]);
+
+        vm.prank(address(uint160(uint256(creator))));
+        unoGame.startGame(gameId1);
+
+        uint256[] memory activeGames = unoGame.getActiveGames();
+        assertEq(activeGames.length, 1, "Should have 1 active game");
+        assertEq(activeGames[0], gameId1, "Active game ID should match");
     }
 }
