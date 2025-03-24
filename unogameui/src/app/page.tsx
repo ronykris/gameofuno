@@ -1,26 +1,27 @@
-import Navbar from "@/components/homePage/Navbar"
 import Hero from "@/components/homePage/Hero"
+import Navbar from "@/components/homePage/Navbar"
 import About from "@/components/homePage/About"
 import Footer from "@/components/homePage/Footer"
 import Quote from "@/components/homePage/Quote"
-import Explore from "@/components/homePage/Explore"
+import Feature from "@/components/homePage/Feature"
+import Partner from "@/components/homePage/Partner"
+import Procedure from "@/components/homePage/Procedure"
 
 
 export default function Home() {
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between">
-      <div className="w-full overflow-hidden">
+    <main className="bg-black overflow-hidden">
+      <div className="relative">
         <Navbar />
         <Hero />
         <div className="relative">
           <About />
-          <Explore />
+          <Feature />
+          <Partner />
+          <Procedure />
         </div>
         <div className="relative">
-          <Quote />
-        </div>
-        <div className="relative">
+          {/* <Quote /> */}
           <Footer />
         </div>
       </div>

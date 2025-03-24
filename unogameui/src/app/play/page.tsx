@@ -15,10 +15,23 @@ import { UnoGameContract } from '@/lib/types';
 import { getContract, getContractNew } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import UNOContractJson from '@/constants/UnoGame.json';
-// import { useLaunchParams } from '@telegram-apps/sdk-react';
+import {
+    Asset,
+    Aurora,
+    BASE_FEE,
+    Keypair,
+    Operation,
+    TransactionBuilder,
+    Memo,
+    NotFoundError
+  } from "diamnet-sdk";
+import { useToast } from "@/components/ui/use-toast"
+import { Toaster } from "@/components/ui/toaster"
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
+
+const server = new Aurora.Server("https://diamtestnet.diamcircle.io/");
+const TESTNET = "Diamante Testnet 2024";
 
 export default function PlayGame() {
 
@@ -33,12 +46,14 @@ export default function PlayGame() {
 
     const socket = useRef<Socket | null>(null);
 
+    const { toast } = useToast()
+
     async function connectWallet() {
         if (window.diam) {
             try {
                 const result = await window.diam.connect();
                 console.log('Wallet connected:', result);
-                const diamPublicKey = result.message.data[0].diamPublicKey;
+                const diamPublicKey = result.message?.data?.[0].diamPublicKey;
                 console.log(`User active public key is: ${diamPublicKey}`);
 
                 if (!diamPublicKey) {
@@ -125,6 +140,11 @@ export default function PlayGame() {
         if (contract) {
             try {
                 setCreateLoading(true)
+
+                // Send Diam first - if this fails, it will throw an error and stop execution
+                await sendDiam();
+                console.log('Diam sent successfully');
+
                 console.log('Creating game...')
                 const tx = await contract.createGame(account as `0x${string}` | undefined)
                 console.log('Transaction hash:', tx.hash)
@@ -140,6 +160,11 @@ export default function PlayGame() {
             } catch (error) {
                 console.error('Failed to create game:', error)
                 setCreateLoading(false)
+                toast({
+                    title: "Transaction Failed",
+                    description: "Failed to create game.",
+                    variant: "destructive",
+                });
             }
         }
     }
@@ -148,6 +173,11 @@ export default function PlayGame() {
         if (contract) {
             try {
                 setJoinLoading(true)
+
+                // Send Diam first - if this fails, it will throw an error and stop execution
+                await sendDiam();
+                console.log('Diam sent successfully');
+
                 console.log(`Joining game ${gameId.toString()}...`)
                 const gameIdBigint = BigInt(gameId.toString())
                 const tx = await contract.joinGame(gameIdBigint, account as `0x${string}` | undefined)
@@ -160,6 +190,12 @@ export default function PlayGame() {
                 router.push(`/room/${gameId.toString()}`)
             } catch (error) {
                 console.error('Failed to join game:', error)
+                setJoinLoading(false)
+                toast({
+                    title: "Transaction Failed",
+                    description: "Failed to join game.",
+                    variant: "destructive",
+                });
             }
         }
     }
@@ -172,6 +208,74 @@ export default function PlayGame() {
             } catch (error) {
                 console.error('Failed to setup contract:', error)
             }
+        }
+    }
+
+    const sendDiam = async () => {
+        try {
+            const destinationId = "GBVDIZST2XZCVKBYJRYSEAVBSEYTJ7M5UPKIUNBGK5IWOACVDUKF5F4T";
+            let transaction;
+            server
+                .loadAccount(destinationId)
+                .catch((error) => {
+                    if (error instanceof NotFoundError) {
+                        throw new Error("The destination account does not exist!");
+                    } else throw error;
+                })
+                .then(() => server.loadAccount(account as string)) // Load source account
+                .then((sourceAccount) => {
+                    transaction = new TransactionBuilder(sourceAccount, {
+                        fee: BASE_FEE,
+                        networkPassphrase: TESTNET,
+                    })
+                        .addOperation(
+                            Operation.payment({
+                                destination: destinationId,
+                                asset: Asset.native(), // Native asset (DIAM)
+                                amount: "10",
+                            })
+                        )
+                        .addMemo(Memo.text("Test Transaction"))
+                        .setTimeout(180)
+                        .build();
+
+                    // transaction.sign(sourceKeypair);
+
+                    let transactionXDR = transaction.toXDR()
+                    const signedTx = window.diam?.sign(transactionXDR, true, TESTNET);
+                    return signedTx;
+                })
+                .then((result) => {
+                    console.log("Success! Transaction hash:", result);
+                    if (result && result.status === 200 && result.message?.data?.hash) {
+                        const txHash = result.message.data.hash;
+                        const txUrl = `https://testnetexplorer.diamante.io/about-tx-hash/${txHash}`;
+                        toast({
+                            title: "Transaction Successful",
+                            description: (
+                                <div>
+                                    <p>Your transaction was successful!</p>
+                                    <a 
+                                        href={txUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="underline text-blue-600 hover:text-blue-800"
+                                    >
+                                        View transaction details
+                                    </a>
+                                </div>
+                            ),
+                            variant: "success",
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Transaction failed:", error);
+                    throw error;
+                });
+        } catch (error) {
+            console.error("Error in sendDiam function:", error);
+            throw error;
         }
     }
 
@@ -198,10 +302,11 @@ export default function PlayGame() {
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
                             <div className='left-1/2 -translate-x-1/2 absolute bottom-4'>
-                            <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={connectWallet}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
+                                <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={connectWallet}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
                             </div>
                         </div>
                         : <>
+                            {/* <button onClick={sendDiam}>Send Diam</button> */}
                             <StyledButton onClick={() => createGame()} className='w-fit bg-[#00b69a] bottom-4 text-2xl my-3 mx-auto'>{createLoading == true ? 'Creating...' : 'Create Game Room'}</StyledButton>
                             <p className='text-white text-sm font-mono'>Note: Don't join the room where game is already started</p>
                             {joinLoading == true && <div className='text-white mt-2 text-2xl shadow-lg'>Wait, while we are joining your game room...</div>}
@@ -231,6 +336,7 @@ export default function PlayGame() {
                     } */}
                 </div>
             </div>
+            <Toaster />
         </div >
     )
 }

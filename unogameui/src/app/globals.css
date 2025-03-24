@@ -3,6 +3,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Add dashed line animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.animate-dash {
+  animation: dash 1s linear infinite;
+}
+
+/* Add dot movement animation */
+@keyframes moveDot {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.animate-move-dot {
+  animation: moveDot 3s linear infinite;
+}
+
 @layer base {
   :root {
     --radius: 0.5rem
