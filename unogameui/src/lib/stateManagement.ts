@@ -10,7 +10,7 @@ export async function reconstructOffChainState(
     gameId: bigint,
     playerAddress: string
   ): Promise<OffChainGameState> {
-    const onChainState = await contract.getGameState(gameId);
+    const onChainState = await contract.getGame(gameId);
     const actions = await contract.getGameActions(gameId);
   
     let offChainState = initializeOffChainState(gameId, onChainState.players);

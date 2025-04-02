@@ -14,15 +14,16 @@ import { convertBigIntsToStrings } from '@/lib/gameLogic'
 import { useAccount } from 'wagmi'
 import { Toaster, toast } from 'react-hot-toast'
 import Header from './header'
+import { useUserAccount } from '@/userstate/useUserAccount'
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
 const Room: React.FC = () => {
     const { id } = useParams()
     const { address, status } = useAccount()
+    const { account } = useUserAccount()
     const [gameId, setGameId] = useState<bigint | null>(null)
     const accountRef = useRef<string | null>(null);
-    const [account, setAccount] = useState<string | null>(null)
     const [contract, setContract] = useState<UnoGameContract | null>(null)
     const [onChainGameState, setOnChainGameState] = useState<OnChainGameState | null>(null)
     const [offChainGameState, setOffChainGameState] = useState<OffChainGameState | null>(null)
@@ -34,16 +35,17 @@ const Room: React.FC = () => {
 
     const socket = useRef<Socket | null>(null);
 
-    // Update accountRef and account whenever address changes
+    // Update accountRef whenever account changes
     useEffect(() => {
-        if (address) {
+        if (account) {
+            accountRef.current = account;
+        } else if (address) {
+            // Fallback to wagmi address if Recoil state is not set
             accountRef.current = address;
-            setAccount(address);
         } else {
             accountRef.current = null;
-            setAccount(null);
         }
-    }, [address]);
+    }, [account, address]);
 
     useEffect(() => {
         if (!socket.current) {
@@ -70,7 +72,7 @@ const Room: React.FC = () => {
 
                     // Update player hand
                     if (accountRef.current) {
-                        console.log('Account: ', account)
+                        console.log('Account: ', accountRef.current)
                         const playerHandHashes = newState.playerHands[accountRef.current];
                         setPlayerHand(playerHandHashes);
                         storePlayerHand(BigInt(id as string), accountRef.current, playerHandHashes);
@@ -107,20 +109,23 @@ const Room: React.FC = () => {
 
     useEffect(() => {
         const setup = async () => {
-            if (status === 'connected' && address) {
+            if (account) {
                 const { contract } = await getContractNew()
                 setContract(contract)
-                console.log('Account: ', address, 'contract: ', contract)
+                const userAddress = account || address
+                console.log('Account: ', userAddress, 'contract: ', contract)
                 if (contract && id) {
                     const bigIntId = BigInt(id as string)
                     setGameId(bigIntId)
                     console.log('Game ID: ', bigIntId)
-                    await fetchGameState(contract, bigIntId, address)
+                    if (userAddress) {
+                        await fetchGameState(contract, bigIntId, userAddress)
+                    }
                 }
             }
         }
         setup()
-    }, [id, status, address])
+    }, [id, account])
 
     useEffect(() => {
         if (playerToStart) {
@@ -130,7 +135,7 @@ const Room: React.FC = () => {
 
     const fetchGameState = async (contract: UnoGameContract, gameId: bigint, account: string) => {
         try {
-            const onChainGameState = await contract.getGameState(gameId)
+            const onChainGameState = await contract.getGame(gameId)
             setOnChainGameState(onChainGameState)
             console.log('On Chain Game state: ', onChainGameState)
 
@@ -176,7 +181,7 @@ const Room: React.FC = () => {
     }
 
     const handleStartGame = async () => {
-        if (!contract || !account || !offChainGameState || !gameId) return
+        if (!contract || !accountRef.current || !offChainGameState || !gameId) return
 
         const newState = startGame(offChainGameState, socket)
         console.log('New State:', newState)
@@ -184,7 +189,7 @@ const Room: React.FC = () => {
         console.log('Player chosen to start: ', startingPlayer)
         setPlayerToStart(startingPlayer)
         console.log('Player to start: ', playerToStart)
-        const action: Action = { type: 'startGame', player: account }
+        const action: Action = { type: 'startGame', player: accountRef.current }
         const actionHash = hashAction(action)
 
         try {
@@ -215,15 +220,15 @@ const Room: React.FC = () => {
     }
 
     const playCard = async (cardHash: string) => {
-        if (!contract || !account || !offChainGameState || !gameId || !socket.current) return
-        const action: Action = { type: 'playCard', player: account, cardHash }
+        if (!contract || !accountRef.current || !offChainGameState || !gameId || !socket.current) return
+        const action: Action = { type: 'playCard', player: accountRef.current, cardHash }
         const newState = applyActionToOffChainState(offChainGameState, action)
         const actionHash = hashAction(action)
 
         const toastId = toast.loading('Playing card...')
 
         try {
-            const tx = await contract.submitAction(gameId, actionHash, account)
+            const tx = await contract.submitAction(gameId, actionHash, accountRef.current)
             await tx.wait()
             setOffChainGameState(newState)
 
@@ -241,9 +246,9 @@ const Room: React.FC = () => {
 
     const drawCard = async () => {
         console.log('Drawing card...')
-        if (!contract || !account || !offChainGameState || !onChainGameState) return
+        if (!contract || !accountRef.current || !offChainGameState || !onChainGameState) return
 
-        const action = { type: 'startGame' as ActionType, player: account }
+        const action = { type: 'startGame' as ActionType, player: accountRef.current }
 
         const toastId = toast.loading('Drawing card...')
 
@@ -253,7 +258,7 @@ const Room: React.FC = () => {
             setOffChainGameState(newOffChainState)
 
             const actionHash = hashState(newOffChainState)
-            const tx = await contract.submitAction(gameId!, actionHash, account)
+            const tx = await contract.submitAction(gameId!, actionHash, accountRef.current)
 
             // Add to pending actions
             setPendingActions(prev => [...prev, { action, txHash: tx.hash }])
@@ -265,18 +270,18 @@ const Room: React.FC = () => {
             setPendingActions(prev => prev.filter(a => a.txHash !== tx.hash))
 
             // Fetch latest state after confirmation
-            await fetchGameState(contract, BigInt(id as string), account)
+            await fetchGameState(contract, BigInt(id as string), accountRef.current)
 
             toast.success('Card drawn successfully!', { id: toastId })
         } catch (error) {
             console.error('Error drawing card:', error)
             // Revert the optimistic update
-            await fetchGameState(contract, BigInt(id as string), account)
+            await fetchGameState(contract, BigInt(id as string), accountRef.current)
             toast.error('Failed to draw card. Please try again.', { id: toastId })
         }
     }
-
-    if (!account || !contract || !onChainGameState || !offChainGameState) {
+    console.log('Account: ', account, 'Contract: ', contract, 'On Chain Game State: ', onChainGameState, 'Off Chain Game State: ', offChainGameState)
+    if (!accountRef.current || !contract || !onChainGameState || !offChainGameState) {
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="loader"></div>
@@ -340,7 +345,7 @@ const Room: React.FC = () => {
                                     <StyledButton
                                         onClick={drawCard}
                                         className='w-fit bg-blue-500 bottom-4 text-2xl mt-6'
-                                        disabled={!canPlay(getPlayerHand(gameId!, account!), offChainGameState.currentColor!, offChainGameState.currentValue!)}
+                                        disabled={!canPlay(getPlayerHand(gameId!, accountRef.current!), offChainGameState.currentColor!, offChainGameState.currentValue!)}
                                     >
                                         Draw Card
                                     </StyledButton>

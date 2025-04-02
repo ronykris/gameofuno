@@ -301,22 +301,20 @@ function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: 
 export function hashState(state: OffChainGameState): string {
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
   const encodedState = abiCoder.encode(
-    ['uint256', 'address[]', 'bool', 'uint256', 'uint256', 'uint256', 'bool', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
+    ['uint256', 'bytes32[]', 'uint8', 'uint256', 'uint256', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
     [
       state.id,
-      state.players,
-      state.isActive,
-      state.currentPlayerIndex,
+      state.players.map(player => ethers.keccak256(ethers.toUtf8Bytes(player))), // Convert player addresses to bytes32
+      state.isStarted ? 1 : 0, // 0=NotStarted, 1=Started, 2=Ended
       state.lastActionTimestamp,
       state.turnCount,
-      state.directionClockwise,
       JSON.stringify(state.playerHandsHash),
       state.deckHash,
       state.discardPileHash,
       state.currentColor || '',
       state.currentValue || '',
       state.lastPlayedCardHash || '',
-      state.isStarted
+      state.directionClockwise
     ]
   );
   return ethers.keccak256(encodedState);

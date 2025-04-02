@@ -27,6 +27,9 @@ import {
   } from "diamnet-sdk";
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { ethers } from "ethers";
+import { useUserAccount } from '@/userstate/useUserAccount';
+import { decodeBase64To32Bytes } from '@/lib/utils';
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -38,11 +41,11 @@ export default function PlayGame() {
     const [open, setOpen] = useState(false)
     const [createLoading, setCreateLoading] = useState(false)
     const [joinLoading, setJoinLoading] = useState(false)
-    const [account, setAccount] = useState<string | null>(null)
     const [contract, setContract] = useState<UnoGameContract | null>(null)
     const [games, setGames] = useState<BigInt[]>([])
     const router = useRouter()
     // const lp = useLaunchParams();
+    const { account, updateUserAccount } = useUserAccount();
 
     const socket = useRef<Socket | null>(null);
 
@@ -61,7 +64,7 @@ export default function PlayGame() {
                 }
 
                 localStorage.setItem('publicKey', diamPublicKey);
-                setAccount(diamPublicKey);
+                updateUserAccount(diamPublicKey);
 
                 return diamPublicKey;
             } catch (error) {
@@ -146,7 +149,10 @@ export default function PlayGame() {
                 console.log('Diam sent successfully');
 
                 console.log('Creating game...')
-                const tx = await contract.createGame(account as `0x${string}` | undefined)
+
+                const bytesFromDIAMAddress = decodeBase64To32Bytes(account as string)
+                
+                const tx = await contract.createGame(bytesFromDIAMAddress as `0x${string}` | undefined)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
                 console.log('Game created successfully')
@@ -179,15 +185,18 @@ export default function PlayGame() {
                 console.log('Diam sent successfully');
 
                 console.log(`Joining game ${gameId.toString()}...`)
+
+                const bytesFromDIAMAddress = decodeBase64To32Bytes(account as string)
+
                 const gameIdBigint = BigInt(gameId.toString())
-                const tx = await contract.joinGame(gameIdBigint, account as `0x${string}` | undefined)
+                const tx = await contract.joinGame(gameIdBigint, bytesFromDIAMAddress as `0x${string}` | undefined)
                 console.log('Transaction hash:', tx.hash)
                 await tx.wait()
 
                 setJoinLoading(false)
 
                 console.log('Joined game successfully')
-                router.push(`/room/${gameId.toString()}`)
+                router.push(`/game/${gameId.toString()}`)
             } catch (error) {
                 console.error('Failed to join game:', error)
                 setJoinLoading(false)
@@ -283,7 +292,6 @@ export default function PlayGame() {
         if (account) {
             setup()
         } else {
-            setAccount(null)
             setContract(null)
         }
     }, [account])
