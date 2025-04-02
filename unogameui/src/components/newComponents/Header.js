@@ -13,6 +13,7 @@ function Header({ roomCode }) {
     <div className='topInfo'>
       <div className="flex gap-4 items-center">
         <Link href="/play" className='material-icons text-white text-2xl'>{"home"}</Link>
+        <Link href="/profile" className='material-icons text-white text-2xl'>{"account_circle"}</Link>
         <h1 className="text-lg font-bold text-white mt-0">Room Code: {roomCode}</h1>
       </div>
       <span>

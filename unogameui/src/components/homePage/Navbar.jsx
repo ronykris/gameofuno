@@ -27,7 +27,10 @@ const Navbar = () => {
         <h2 className="font-extrabold text-[24px] leading-[30.24px] text-white">
            zkUNO
         </h2>
-        <StyledButton onClick={() => router.push("/play")} roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl'>Start Game</StyledButton>
+        <div className="flex gap-4">
+          <StyledButton onClick={() => router.push("/profile")} roundedStyle='rounded-full' className='bg-[#8a2be2] text-2xl'>Profile</StyledButton>
+          <StyledButton onClick={() => router.push("/play")} roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl'>Start Game</StyledButton>
+        </div>
       </div>
     </motion.nav>
   )
