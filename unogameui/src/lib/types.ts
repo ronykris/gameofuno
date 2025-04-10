@@ -30,13 +30,11 @@ export interface OffChainGameState {
 export interface OnChainGameState {
     id: bigint;
     players: string[];
-    isActive: boolean;
-    currentPlayerIndex: bigint;
-    stateHash: string;
-    lastActionTimestamp: bigint;
-    turnCount: bigint;
-    directionClockwise: boolean;
-    isStarted: boolean;
+    status: number; // 0=NotStarted, 1=Started, 2=Ended
+    startTime: bigint;
+    endTime: bigint;
+    gameHash: string;
+    moves: string[];
 }
 
 export type ActionType = 'startGame' | 'playCard' | 'drawCard';
@@ -50,10 +48,17 @@ export interface Action {
 export interface UnoGameContract {
   createGame: (account: `0x${string}` | undefined) => Promise<any>;
   joinGame: (gameId: bigint, address: `0x${string}`| undefined) => Promise<any>;
-  startGame: (gameId: bigint, initialStateHash: string) => Promise<any>;
-  submitAction: (gameId: bigint, actionHash: string, account: string) => Promise<any>;
-  getGame: (gameId: bigint) => Promise<OnChainGameState>;
-  getGameActions: (gameId: bigint) => Promise<{ player: string; actionHash: string; timestamp: bigint }[]>;
-  endGame: (gameId: bigint) => Promise<any>;
+  startGame: (gameId: bigint) => Promise<any>;
+  commitMove: (gameId: bigint, moveHash: string) => Promise<any>;
+  getGame: (gameId: bigint) => Promise<[
+    bigint,           // id
+    string[],         // players
+    number,           // status
+    bigint,           // startTime
+    bigint,           // endTime
+    string,           // gameHash
+    string[]          // moves
+  ]>;
+  endGame: (gameId: bigint, gameHash: string) => Promise<any>;
   getActiveGames: () => Promise<bigint[]>;
 }

@@ -159,10 +159,22 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
     const roomId = `game-${state.id.toString()}`;
 
+    // Emit to the specific room instead of just emitting the event
     socket.current.emit('gameStarted', {
       newState: convertBigIntsToStrings(newState),
       cardHashMap: cardHashMapObject,
       roomId: roomId
+    });
+
+    // Also emit the event with the room-specific name to ensure all listeners receive it
+    socket.current.emit(`gameStarted-${roomId}`, {
+      newState: convertBigIntsToStrings(newState),
+      cardHashMap: cardHashMapObject
+    });
+
+    console.log(`Emitted gameStarted-${roomId} event with:`, {
+      newState: convertBigIntsToStrings(newState),
+      cardHashMap: Object.keys(cardHashMapObject).length + ' cards'
     });
   }
 
@@ -300,21 +312,46 @@ function getNextPlayer(currentPlayer: string, playerHands: { [address: string]: 
 
 export function hashState(state: OffChainGameState): string {
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+  
+  // Make sure we handle null values properly
+  const currentColor = state.currentColor || '';
+  const currentValue = state.currentValue || '';
+  const lastPlayedCardHash = state.lastPlayedCardHash || '';
+  const lastActionTimestamp = state.lastActionTimestamp || BigInt(0); // Default to 0 if undefined
+  const isStarted = state.isStarted !== undefined ? state.isStarted : false; // Default to false if undefined
+  const playerHandsHash = state.playerHandsHash || {}; // Default to empty object if undefined
+  const deckHash = state.deckHash || ''; // Default to empty string if undefined
+  const discardPileHash = state.discardPileHash || ''; // Default to empty string if undefined
+  
+  // Ensure players is an array and not a Proxy object
+  const players = state.players ? Array.from(state.players) : [];
+
+  console.log("Processing state for hashing:", {
+    id: state.id,
+    players,
+    isStarted,
+    lastActionTimestamp,
+    playerHandsHash,
+    deckHash,
+    discardPileHash,
+    currentColor,
+    currentValue,
+    lastPlayedCardHash
+  });
+  
   const encodedState = abiCoder.encode(
-    ['uint256', 'bytes32[]', 'uint8', 'uint256', 'uint256', 'string', 'string', 'string', 'string', 'string', 'string', 'bool'],
+    ['uint256', 'bytes32[]', 'uint8', 'uint256', 'string', 'string', 'string', 'string', 'string', 'string'],
     [
       state.id,
-      state.players.map(player => ethers.keccak256(ethers.toUtf8Bytes(player))), // Convert player addresses to bytes32
-      state.isStarted ? 1 : 0, // 0=NotStarted, 1=Started, 2=Ended
-      state.lastActionTimestamp,
-      state.turnCount,
-      JSON.stringify(state.playerHandsHash),
-      state.deckHash,
-      state.discardPileHash,
-      state.currentColor || '',
-      state.currentValue || '',
-      state.lastPlayedCardHash || '',
-      state.directionClockwise
+      players.map(player => ethers.keccak256(ethers.toUtf8Bytes(player))), // Convert player addresses to bytes32
+      isStarted ? 1 : 0, // 0=NotStarted, 1=Started, 2=Ended
+      lastActionTimestamp,
+      JSON.stringify(playerHandsHash),
+      deckHash,
+      discardPileHash,
+      currentColor,
+      currentValue,
+      lastPlayedCardHash,
     ]
   );
   return ethers.keccak256(encodedState);
@@ -323,7 +360,7 @@ export function hashState(state: OffChainGameState): string {
 export function hashAction(action: Action): string {
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
   const encodedAction = abiCoder.encode(
-    ['string', 'address', 'string'],
+    ['string', 'bytes32', 'string'],
     [
       action.type,
       action.player,

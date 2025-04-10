@@ -7,6 +7,7 @@ import { PACK_OF_CARDS, ACTION_CARDS } from "../../util/packOfCards";
 import shuffleArray from "../../util/shuffleArray";
 import { useSoundProvider } from "../../context/SoundProvider";
 import ColourDialog from "./colourDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 //NUMBER CODES FOR ACTION CARDS
 //SKIP - 100
@@ -23,7 +24,7 @@ const checkWinner = (playerDeck, player) => {
 };
 
 const initialGameState = {
-  gameOver: true,
+  gameOver: false,
   winner: "",
   turn: "",
   player1Deck: [],
@@ -34,6 +35,7 @@ const initialGameState = {
   drawCardPile: [],
   isUnoButtonPressed: false,
   drawButtonPressed: false,
+  lastCardPlayedBy: "",
 };
 
 const gameReducer = (state, action) => ({ ...state, ...action });
@@ -43,6 +45,9 @@ const Game = ({ room, currentUser }) => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogCallback, setDialogCallback] = useState(null);
+  const [rewardGiven, setRewardGiven] = useState(false);
+
+  const { toast } = useToast();
 
   console.log(isDialogOpen)
 
@@ -58,6 +63,7 @@ const Game = ({ room, currentUser }) => {
     drawCardPile,
     isUnoButtonPressed,
     drawButtonPressed,
+    lastCardPlayedBy,
   } = gameState;
 
   //handles the sounds with our custom sound provider
@@ -246,6 +252,14 @@ const Game = ({ room, currentUser }) => {
   const onCardPlayedHandler = (played_card) => {
     //extract player who played the card
     const cardPlayedBy = turn;
+
+    // Update the last player who played a card
+    dispatch({
+      lastCardPlayedBy: cardPlayedBy
+    });
+
+    //extract the card played
+    const cardPlayed = played_card;
     switch (played_card) {
       //if card played was a skip card
       case "skipR":
@@ -408,6 +422,92 @@ const Game = ({ room, currentUser }) => {
       drawButtonPressed: false,
     });
   };
+
+  const handleWinnerReward = async (winnerName) => {
+    try {
+      if (rewardGiven) return; // Prevent multiple rewards
+
+      // In the UNO game, the winner is the player who played the last card
+      // The lastCardPlayedBy state tracks this
+      const winnerPlayer = gameState.lastCardPlayedBy || winnerName;
+
+      // Get the winner's wallet address
+      // In this implementation, we'll use window.diam.address which should be the current user's address
+      const currentUserAddress = window.diam?.address;
+      console.log('Current user wallet address:', currentUserAddress);
+
+      if (!currentUserAddress) {
+        console.log('Current user wallet address not available');
+        return;
+      }
+
+      // Only create a claimable balance if the current user is the winner
+      const isCurrentUserWinner =
+        (winnerPlayer === "Player 1" && currentUser === "Player 1") ||
+        (winnerPlayer === "Player 2" && currentUser === "Player 2");
+
+      if (!isCurrentUserWinner) {
+        console.log('Current user is not the winner, not creating claimable balance');
+        return;
+      }
+
+      console.log(`Creating claimable balance for winner: ${winnerPlayer} with address: ${currentUserAddress}`);
+
+      // Call the backend API to create the claimable balance
+      const response = await fetch(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/api/create-claimable-balance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          winnerAddress: currentUserAddress,
+          gameId: room
+        }),
+      });
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      if (data.success) {
+        console.log('Successfully created claimable balance for winner!', data);
+        setRewardGiven(true);
+
+        // Show success toast notification
+        toast({
+          title: "Reward Created!",
+          description: "You've earned 5 DIAM tokens. Check your profile to claim them.",
+          variant: "success",
+          duration: 5000,
+        });
+      } else {
+        console.error('Failed to create claimable balance:', data.error);
+
+        // Show error toast
+        toast({
+          title: "Reward Failed",
+          description: "There was an issue creating your reward. Please try again later.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating claimable balance:', error);
+
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "Something went wrong while creating your reward.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (gameOver && winner && !rewardGiven) {
+      handleWinnerReward(winner);
+    }
+  }, [gameOver, winner, rewardGiven]);
 
   return (
     <div className={`backgroundColor${currentColor}`}>

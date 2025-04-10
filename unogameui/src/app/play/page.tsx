@@ -144,9 +144,9 @@ export default function PlayGame() {
             try {
                 setCreateLoading(true)
 
-                // Send Diam first - if this fails, it will throw an error and stop execution
-                await sendDiam();
-                console.log('Diam sent successfully');
+                // // Send Diam first - if this fails, it will throw an error and stop execution
+                // await sendDiam();
+                // console.log('Diam sent successfully');
 
                 console.log('Creating game...')
 
