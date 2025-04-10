@@ -8,6 +8,7 @@ import shuffleArray from "../../util/shuffleArray";
 import { useSoundProvider } from "../../context/SoundProvider";
 import ColourDialog from "./colourDialog";
 import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 //NUMBER CODES FOR ACTION CARDS
 //SKIP - 100
@@ -540,6 +541,7 @@ const Game = ({ room, currentUser }) => {
       ) : (
         <CenterInfo msg={`Game Over: ${winner} wins!!`} />
       )}
+      <Toaster />
     </div>
   );
 };
