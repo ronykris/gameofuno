@@ -30,6 +30,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ethers } from "ethers";
 import { useUserAccount } from '@/userstate/useUserAccount';
 import { decodeBase64To32Bytes } from '@/lib/utils';
+import { connectWallet } from '@/utils/walletUtils';
 
 const CONNECTION = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://unosocket-6k6gsdlfoa-el.a.run.app/';
 
@@ -51,35 +52,17 @@ export default function PlayGame() {
 
     const { toast } = useToast()
 
-    async function connectWallet() {
-        if (window.diam) {
-            try {
-                const result = await window.diam.connect();
-                console.log('Wallet connected:', result);
-                const diamPublicKey = result.message?.data?.[0].diamPublicKey;
-                console.log(`User active public key is: ${diamPublicKey}`);
-
-                if (!diamPublicKey) {
-                    throw new Error('Failed to connect wallet');
-                }
-
-                localStorage.setItem('publicKey', diamPublicKey);
-                updateUserAccount(diamPublicKey);
-
-                return diamPublicKey;
-            } catch (error) {
-                console.error(`Error: ${error}`);
-                throw error;
-            }
-        } else {
-            alert('Wallet extension not found');
-            // document.getElementById('error').innerText = 'Wallet extension not found';
-            // document.getElementById('error').style.display = 'block';
-            // document.getElementById('notification').style.display = 'none';
-            // setTimeout(() => {
-            //     window.location.href = 'https://chromewebstore.google.com/detail/diam-wallet/oakkognifoojdbfjaccegangippipdmn?hl=en';
-            // }, 1000);
-            // throw new Error('Wallet extension not found');
+    async function handleConnectWallet() {
+        try {
+            await connectWallet(updateUserAccount);
+        } catch (error) {
+            console.error(`Error: ${error}`);
+            toast({
+                title: "Connection Failed",
+                description: "Failed to connect your wallet. Please try again.",
+                variant: "destructive",
+                duration: 5000,
+            });
         }
     }
 
@@ -310,7 +293,7 @@ export default function PlayGame() {
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
                             <div className='left-1/2 -translate-x-1/2 absolute bottom-4'>
-                                <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={connectWallet}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
+                                <StyledButton data-testid="connect" roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl' onClick={handleConnectWallet}>{account ? `Connected Wallet` : `Connect Wallet`}</StyledButton>
                             </div>
                         </div>
                         : <>

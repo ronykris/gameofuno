@@ -9,6 +9,8 @@ import { useSoundProvider } from "../../context/SoundProvider";
 import ColourDialog from "./colourDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { connectWallet, getConnectedWalletAddress } from "@/utils/walletUtils";
+import { addClaimableBalance, claimableBalancesApi } from '@/utils/supabase';
 
 //NUMBER CODES FOR ACTION CARDS
 //SKIP - 100
@@ -430,22 +432,60 @@ const Game = ({ room, currentUser }) => {
 
       // In the UNO game, the winner is the player who played the last card
       // The lastCardPlayedBy state tracks this
-      const winnerPlayer = gameState.lastCardPlayedBy || winnerName;
+      const winnerPlayer = winnerName;
 
       // Get the winner's wallet address
       // In this implementation, we'll use window.diam.address which should be the current user's address
-      const currentUserAddress = window.diam?.address;
+      let currentUserAddress = getConnectedWalletAddress();
       console.log('Current user wallet address:', currentUserAddress);
 
+      // If wallet is not connected, try to connect it
       if (!currentUserAddress) {
-        console.log('Current user wallet address not available');
+        console.log('Wallet not connected. Attempting to connect...');
+        
+        // Show connecting toast
+        toast({
+          title: "Connecting Wallet",
+          description: "Please approve the connection request in your wallet extension.",
+          variant: "default",
+          duration: 5000,
+        });
+        
+        // Try to connect wallet
+        try {
+          currentUserAddress = await connectWallet();
+        } catch (error) {
+          console.error('Error connecting wallet:', error);
+          toast({
+            title: "Connection Failed",
+            description: "Failed to connect your wallet. Please try again.",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+      }
+
+      if (!currentUserAddress) {
+        console.log('Failed to connect wallet. Cannot create claimable balance.');
+        
+        toast({
+          title: "Wallet Required",
+          description: "A connected wallet is required to receive your reward.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        
         return;
       }
+      console.log('Connected wallet address:', currentUserAddress);
+
 
       // Only create a claimable balance if the current user is the winner
       const isCurrentUserWinner =
         (winnerPlayer === "Player 1" && currentUser === "Player 1") ||
         (winnerPlayer === "Player 2" && currentUser === "Player 2");
+
+      console.log(currentUser, winnerPlayer, isCurrentUserWinner)
 
       if (!isCurrentUserWinner) {
         console.log('Current user is not the winner, not creating claimable balance');
@@ -454,7 +494,6 @@ const Game = ({ room, currentUser }) => {
 
       console.log(`Creating claimable balance for winner: ${winnerPlayer} with address: ${currentUserAddress}`);
 
-      // Call the backend API to create the claimable balance
       const response = await fetch(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}/api/create-claimable-balance`, {
         method: 'POST',
         headers: {
@@ -473,7 +512,9 @@ const Game = ({ room, currentUser }) => {
         console.log('Successfully created claimable balance for winner!', data);
         setRewardGiven(true);
 
-        // Show success toast notification
+        const supabaseResponse = await claimableBalancesApi.addClaimableBalance(currentUserAddress, data.balanceId);
+        console.log('Supabase response:', supabaseResponse);
+
         toast({
           title: "Reward Created!",
           description: "You've earned 5 DIAM tokens. Check your profile to claim them.",
@@ -483,7 +524,6 @@ const Game = ({ room, currentUser }) => {
       } else {
         console.error('Failed to create claimable balance:', data.error);
 
-        // Show error toast
         toast({
           title: "Reward Failed",
           description: "There was an issue creating your reward. Please try again later.",
@@ -494,7 +534,6 @@ const Game = ({ room, currentUser }) => {
     } catch (error) {
       console.error('Error creating claimable balance:', error);
 
-      // Show error toast
       toast({
         title: "Error",
         description: "Something went wrong while creating your reward.",
