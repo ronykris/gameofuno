@@ -5,22 +5,22 @@ import Image from 'next/image';
 const Procedure = () => {
   const steps = [
     {
-      image: '/images/connect-wallet.png',
+      image: '/connect-wallet.png',
       title: 'Connect Wallet',
       isButton: true
     },
     {
-      image: '/images/join-room.png',
+      image: '/join-room.png',
       title: 'Join Room',
       isButton: true
     },
     {
-      image: '/images/waiting-room.png',
+      image: '/waiting-room.png',
       title: 'Wait for Player 2 to Join',
       isButton: true
     },
     {
-      image: '/images/game-start.png',
+      image: '/game-start.png',
       title: 'Game Starts!',
       isButton: true
     }
@@ -42,47 +42,6 @@ const Procedure = () => {
 
         {/* Game Flow Steps */}
         <div className="relative max-w-5xl mx-auto">
-          {/* Connecting Lines */}
-          <div className="absolute inset-0 z-0">
-            <svg className="w-full h-full" viewBox="0 0 1200 600" preserveAspectRatio="none">
-              {/* First curved line from Connect Wallet to Join Room */}
-              <path
-                d="M250,150 C350,150 400,250 500,250"
-                fill="none"
-                stroke="#FF9000"
-                strokeWidth="2"
-                strokeDasharray="6,6"
-                className="animate-dash"
-              />
-              {/* Second curved line from Join Room to Wait for Player */}
-              <path
-                d="M650,250 C750,250 800,350 900,350"
-                fill="none"
-                stroke="#FF9000"
-                strokeWidth="2"
-                strokeDasharray="6,6"
-                className="animate-dash"
-              />
-              {/* Third curved line from Wait for Player to Game Starts */}
-              <path
-                d="M1050,350 C1100,350 1150,450 1200,450"
-                fill="none"
-                stroke="#FF9000"
-                strokeWidth="2"
-                strokeDasharray="6,6"
-                className="animate-dash"
-              />
-              {/* Animated dots */}
-              <circle className="animate-move-dot" r="4" fill="#FF9000">
-                <animateMotion
-                  dur="3s"
-                  repeatCount="indefinite"
-                  path="M250,150 C350,150 400,250 500,250 M650,250 C750,250 800,350 900,350 M1050,350 C1100,350 1150,450 1200,450"
-                />
-              </circle>
-            </svg>
-          </div>
-
           {/* Steps Grid */}
           <div className="grid grid-cols-2 gap-x-24 gap-y-32 relative z-10">
             {steps.map((step, index) => (

@@ -38,7 +38,7 @@ const About = () => {
               className="relative w-full h-[400px] mt-8 transform hover:scale-105 transition-transform duration-500"
             >
               <Image
-                src="/images/uno-cards.png"
+                src="/uno-cards.png"
                 alt="UNO Cards"
                 fill
                 className="object-contain drop-shadow-[0_0_30px_rgba(255,144,0,0.3)]"
@@ -71,11 +71,11 @@ const About = () => {
               variants={fadeIn('left', 'tween', 0.4, 1)}
               className="text-lg text-gray-300 mb-12 leading-relaxed"
             >
-              Zero-Knowledge UNO is a cutting-edge, multiplayer digital adaptation of the classic UNO game, now enhanced with advanced Zero-Knowledge Proofs (ZKPs) technology to ensure privacy, fairness, and security in every game. Whether you're a casual player or a competitive strategist, it offers a revolutionary gaming experience that combines the fun of UNO with the power of blockchain technology
+              ZkUNO is a cutting-edge, multiplayer digital adaptation of the classic UNO game, now enhanced with bloackchain technology to ensure privacy, fairness, and security in every game. Whether you're a casual player or a competitive strategist, it offers a revolutionary gaming experience that combines the fun of UNO with the power of blockchain technology
             </motion.p>
 
             {/* Stats Grid */}
-            <motion.div
+            {/* <motion.div
               variants={fadeIn('up', 'tween', 0.5, 1)}
               className="grid grid-cols-2 gap-6"
             >
@@ -88,8 +88,8 @@ const About = () => {
                   <p className="text-gray-400">{stat.label}</p>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
+            </motion.div>*/}
+          </motion.div> 
         </div>
       </div>
     </section>

@@ -8,19 +8,19 @@ const Feature = () => {
 
   const features = [
     {
-      title: "Experience",
-      description: "Multiplayer Matchmaking - Play with friends or join global online matches.",
-      image: "/images/gaming-experience.jpg"
+      title: "User-Friendly UI",
+      description: "Enjoy the classic fun of UNO with a modern twist. Our intuitive interface is designed for all players — whether you're a casual gamer or a crypto enthusiast, jumping into a game has never been easier.",
+      image: "/homePage/gaming.jpg"
     },
     {
       title: "Gaming Experience",
       description: "Multiplayer Matchmaking - Play with friends or join global online matches.",
-      image: "/images/gaming-experience-2.jpg"
+      image: "/homePage/gaming.jpg"
     },
     {
-      title: "Gaming",
-      description: "Multiplayer Matchmaking - Play with friends or join global online matches.",
-      image: "/images/gaming-experience-3.jpg"
+      title: "Powered by Blockchain",
+      description: "Experience true ownership, transparency, and fairness in every game.",
+      image: "/homePage/gaming.jpg"
     }
   ];
 
