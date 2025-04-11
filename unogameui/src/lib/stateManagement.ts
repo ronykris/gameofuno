@@ -10,10 +10,11 @@ export async function reconstructOffChainState(
     gameId: bigint,
     playerAddress: string
   ): Promise<OffChainGameState> {
-    const onChainState = await contract.getGame(gameId);
+    const gameData = await contract.getGame(gameId);
+    const players = gameData[1]; // Extract players from tuple
     const actions = await contract.getGameActions(gameId);
   
-    let offChainState = initializeOffChainState(gameId, onChainState.players);
+    let offChainState = initializeOffChainState(gameId, players);
   
     localActionCache[gameId.toString()] = [];
   
@@ -24,7 +25,7 @@ export async function reconstructOffChainState(
         localActionCache[gameId.toString()].push(reconstructedAction);
     }
   
-    if (hashState(offChainState) !== onChainState.stateHash) {
+    if (hashState(offChainState) !== gameData[5]) { // gameHash is at index 5
       throw new Error('Reconstructed state does not match on-chain hash');
     }
   
@@ -47,8 +48,16 @@ export async function reconstructOffChainState(
     };
   }
 
-  export function verifyOffChainState(offChainState: OffChainGameState, onChainState: OnChainGameState): boolean {
-    return hashState(offChainState) === onChainState.stateHash;
+  export function verifyOffChainState(offChainState: OffChainGameState, onChainState: [
+    bigint,           // id
+    string[],         // players
+    number,           // status
+    bigint,           // startTime
+    bigint,           // endTime
+    string,           // gameHash
+    string[]          // moves
+  ]): boolean {
+    return hashState(offChainState) === onChainState[5]; // gameHash is at index 5
   }
 
   export function updateOffChainState(currentState: OffChainGameState, action: Action): OffChainGameState {

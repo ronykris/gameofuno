@@ -1,12 +1,5 @@
 'use client'
 
-// Extend the Window interface to include the diam property
-declare global {
-    interface Window {
-        diam?: any;
-    }
-}
-
 import StyledButton from '@/components/styled-button'
 import { useRef, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation';

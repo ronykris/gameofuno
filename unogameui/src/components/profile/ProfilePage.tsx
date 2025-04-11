@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import ClaimableBalances from './ClaimableBalances';
-import AddClaimableBalance from './AddClaimableBalance';
 
 interface ProfilePageProps {
   userAccount: string | null;

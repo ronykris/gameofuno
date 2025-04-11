@@ -49,6 +49,18 @@ declare global {
     diam?: {
       connect: () => Promise<any>;
       address?: string;
+      sign: (transactionXDR: string, network: boolean, networkPassphrase: string) => {
+        status: number;
+        message?: {
+          data?: {
+            hash?: string;
+            signedXDR?: string;
+            [key: string]: any;
+          };
+          [key: string]: any;
+        };
+        [key: string]: any;
+      };
     };
   }
 }
