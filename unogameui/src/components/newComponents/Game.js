@@ -512,7 +512,7 @@ const Game = ({ room, currentUser }) => {
         console.log('Successfully created claimable balance for winner!', data);
         setRewardGiven(true);
 
-        const supabaseResponse = await claimableBalancesApi.addClaimableBalance(currentUserAddress, data.balanceId);
+        const supabaseResponse = await claimableBalancesApi.addClaimableBalance(currentUserAddress, data.balanceId, assetType="DIAM");
         console.log('Supabase response:', supabaseResponse);
 
         toast({

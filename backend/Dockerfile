@@ -10,6 +10,12 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Copy the .env file
+COPY .env .
+
+# Install dotenv package to load environment variables
+RUN npm install dotenv --save
+
 # Copy the rest of the application code
 COPY . .
 
