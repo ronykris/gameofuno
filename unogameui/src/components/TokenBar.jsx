@@ -20,7 +20,6 @@ import { IoMdAdd } from "react-icons/io";
 export default function TokenInfoBar() {
 
     const [open, setOpen] = useState(false)
-    const [accounts, setAccounts] = useState(null);
     const [balance, setBalance] = useState(0)
 
     const openHandler = () => {
@@ -65,10 +64,12 @@ export default function TokenInfoBar() {
                         </DialogContent>
                     </Dialog>
                 </span> */}
-                <Avatar>
-                    <AvatarImage src={`https://api.dicebear.com/8.x/notionists/svg`} alt="@user" />
-                    <AvatarFallback>MD</AvatarFallback>
-                </Avatar>
+                <Link href="/profile" className="cursor-pointer">
+                    <Avatar>
+                        <AvatarImage src={`https://api.dicebear.com/8.x/notionists/svg`} alt="@user" />
+                        <AvatarFallback>MD</AvatarFallback>
+                    </Avatar>
+                </Link>
             </div>
         </div>
     )

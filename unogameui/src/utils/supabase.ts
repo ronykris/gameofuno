@@ -93,7 +93,7 @@ export const claimableBalancesApi = {
       const { data, error } = await supabase
         .from('claimable_balances')
         .update({ claimed: true })
-        .eq('id', balanceId)
+        .eq('balance_id', balanceId)
         .select()
         .single();
       
@@ -119,7 +119,7 @@ export const claimableBalancesApi = {
       const { data, error } = await supabase
         .from('claimable_balances')
         .select('*')
-        .eq('id', balanceId)
+        .eq('balance_id', balanceId)
         .single();
       
       if (error) {
