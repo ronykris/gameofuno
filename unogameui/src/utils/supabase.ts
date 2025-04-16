@@ -50,14 +50,12 @@ export const claimableBalancesApi = {
    * @param userAddress - The user's public key
    * @param balanceId - The Stellar claimable balance ID
    * @param amount - The amount of the claimable balance
-   * @param assetType - The asset type (e.g., XLM)
    * @returns The newly created claimable balance
    */
   async addClaimableBalance(
     userAddress: string,
     balanceId: string,
     amount?: string,
-    assetType?: string
   ): Promise<ClaimableBalance> {
     try {
       const { data, error } = await supabase
@@ -67,7 +65,6 @@ export const claimableBalancesApi = {
             user_address: userAddress,
             balance_id: balanceId,
             amount,
-            asset_type: assetType,
             claimed: false
           }
         ])
