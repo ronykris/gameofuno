@@ -8,7 +8,7 @@ export async function connectWallet(updateUserAccount?: (publicKey: string) => v
     try {
       const result = await window.diam.connect();
       console.log('Wallet connected:', result);
-      const diamPublicKey = result.message?.data?.[0].diamPublicKey;
+      const diamPublicKey = result.message?.data?.[0].publicKey;
       console.log(`User active public key is: ${diamPublicKey}`);
 
       if (!diamPublicKey) {

@@ -9,7 +9,6 @@ import CenterInfo from "./CenterInfo";
 import { UnoGameContract, OffChainGameState, OnChainGameState, Card, Action, ActionType } from '../../lib/types'
 import { useUserAccount } from '@/userstate/useUserAccount';
 import { getContractNew } from '../../lib/web3'
-import { decodeBase64To32Bytes } from "@/lib/utils";
 import { applyActionToOffChainState, hashAction, startGame, storePlayerHand, getPlayerHand, createDeck, hashCard, initializeOffChainState } from '../../lib/gameLogic'
 import { updateGlobalCardHashMap } from '../../lib/globalState';
 
@@ -29,22 +28,18 @@ const Room = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const { account, bytesAddress } = useUserAccount();
   const [contract, setContract] = useState<UnoGameContract | null>(null)
-  const accountRef = useRef<string | null>(null);
   const [gameId, setGameId] = useState<bigint | null>(null)
 
   const [offChainGameState, setOffChainGameState] = useState<OffChainGameState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [playerToStart, setPlayerToStart] = useState<string | null>(null)
-  const [pendingActions, setPendingActions] = useState<{ action: any, txHash: string }[]>([])
   const [playerHand, setPlayerHand] = useState<string[]>([])
-  const [onChainGameState, setOnChainGameState] = useState<OnChainGameState | null>(null)
 
   useEffect(() => {
     socket.emit("join", { room: room }, (error: any) => {
       if (error) setRoomFull(true);
     });
 
-    //cleanup on component unmount
     return function cleanup() {
       socket.emit("quitRoom");
       socket.off();
@@ -56,11 +51,9 @@ const Room = () => {
       if (account) {
         const { contract } = await getContractNew()
         setContract(contract)
-        // console.log('Account: ', account, 'contract: ', contract)
         if (contract && id) {
           const bigIntId = BigInt(id as string)
           setGameId(bigIntId)
-          // console.log('Game ID: ', bigIntId)
           await fetchGameState(contract, bigIntId, account)
         }
       }
@@ -73,13 +66,10 @@ const Room = () => {
 
     const roomId = `game-${id}`;
     
-    // Join the room when the component mounts
     console.log(`Joining room: ${roomId}`);
     socket.emit("joinRoom", roomId);
 
-    // Set up socket event listeners
     if (socket) {
-      // Listen for gameStarted event for this specific room
       socket.on(`gameStarted-${roomId}`, (data: { newState: OffChainGameState; cardHashMap: any; }) => {
         console.log(`Game started event received for room ${roomId}:`, data);
         
@@ -95,7 +85,6 @@ const Room = () => {
             return;
           }
 
-          // Update the global card hash map
           if (cardHashMap) {
             console.log('Updating global card hash map');
             updateGlobalCardHashMap(cardHashMap);
@@ -103,15 +92,12 @@ const Room = () => {
             console.warn('Warning: No cardHashMap received in gameStarted event');
           }
 
-          // Set game as started
           console.log('Setting game as started');
           setGameStarted(true);
 
-          // Update the game state
           console.log('Updating off-chain game state');
           setOffChainGameState(newState);
 
-          // Update player hand
           if (account) {
             console.log('Updating player hand for account:', account);
             console.log('Player hands in newState:', newState.playerHands);
@@ -130,7 +116,6 @@ const Room = () => {
             console.error('Error: No account available to update player hand');
           }
 
-          // Update other relevant state
           if (newState.players && newState.currentPlayerIndex !== undefined) {
             const startingPlayer = newState.players[newState.currentPlayerIndex];
             console.log('Setting player to start:', startingPlayer);
@@ -145,13 +130,10 @@ const Room = () => {
 
       // Listen for cardPlayed event
       socket.on(`cardPlayed-${roomId}`, (data: { action: any; newState: OffChainGameState; }) => {
-        // console.log(`Card played event received for room ${roomId}:`, data);
         const { action, newState } = data;
 
-        // Update the off-chain game state
         setOffChainGameState(newState);
 
-        // Update player hand if necessary
         if (account && newState.playerHands[account]) {
           setPlayerHand(newState.playerHands[account]);
         }
@@ -171,11 +153,9 @@ const Room = () => {
 
   const fetchGameState = async (contract: UnoGameContract, gameId: bigint, account: string) => {
     try {
-      // The getGame function returns a tuple of values, not an object
       const [id, players, status, startTime, endTime, gameHash, moves] = await contract.getGame(gameId)
       console.log('On chain game state: ', { id, players, status, startTime, endTime, gameHash, moves })
 
-      // Format the game data
       const gameData = {
         id,
         players,
@@ -211,7 +191,6 @@ const Room = () => {
         const allCards = createDeck()
         const tempCardHashMap: { [hash: string]: Card } = {}
         
-        // Map all cards to their hashes for easy lookup
         allCards.forEach((card: Card) => {
             const hash = hashCard(card);
             tempCardHashMap[hash] = card;
@@ -219,22 +198,12 @@ const Room = () => {
         updateGlobalCardHashMap(tempCardHashMap);
 
         offChainGameState.playerHands = {};
-        //for (const player of onChainGameState.players) {
         const playerHand = getPlayerHand(gameId, account);
-        //offChainGameState.playerHands[player] = playerHand;
-        //if (player === account) {
         setPlayerHand(playerHand);
-        // console.log('Current player hand (hashes):', playerHand);
       }
 
       setOffChainGameState(offChainGameState)
       console.log('Off chain game state: ', offChainGameState)
-
-      // Since getGameActions is no longer available, we can't apply past actions
-      // We'll need to rely on the current game state from the contract
-      
-      // If we need to track game actions in the future, we'll need to implement a different approach
-      // such as using events or storing the actions in a separate data structure
 
       return offChainGameState;
     } catch (error) {
@@ -253,36 +222,25 @@ const Room = () => {
     }
 
     try {
-      // First start the game on the contract
       console.log('Starting game on contract...')
-      // const tx = await contract.startGame(gameId)
-      // await tx.wait()
       console.log('Game started on contract')
 
-      // Initialize the game state locally
       console.log('Initializing local game state...')
       const newState = startGame(offChainGameState, socket)
       console.log('New State:', newState)
 
-      // Update the current player
       const startingPlayer = newState.players[newState.currentPlayerIndex]
       setPlayerToStart(startingPlayer)
 
-      // Create the start game action
       const action: Action = { type: 'startGame', player: bytesAddress! }
       const actionHash = hashAction(action)
       console.log('Action hash:', actionHash)
 
-      // Commit the move (action) to the contract
       console.log('Committing move to contract...')
-      // const moveTx = await contract.commitMove(gameId, actionHash)
-      // await moveTx.wait()
       console.log('Move committed to contract')
 
-      // Update the UI state
       setGameStarted(true)
 
-      // Apply the action to the local state
       const optimisticUpdate = applyActionToOffChainState(newState, action)
       setOffChainGameState(optimisticUpdate)
       console.log('Updated off-chain state:', optimisticUpdate)

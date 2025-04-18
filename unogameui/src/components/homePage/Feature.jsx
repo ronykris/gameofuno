@@ -35,18 +35,14 @@ const Feature = () => {
   return (
     <section className="py-20 bg-[#0A0A0A]">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <div className="mb-12">
           <h3 className="text-[#FDB813] text-xl mb-2">Features</h3>
           <h2 className="text-white text-4xl font-bold">What we bring to the table</h2>
         </div>
 
-        {/* Feature Carousel */}
         <div className="relative">
-          {/* Feature Cards Container */}
-          <div className="flex items-center justify-center gap-6">
-            {/* Previous Feature */}
-            <div className="relative w-64 h-64 opacity-50 transition-all duration-500">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <div className="relative w-64 h-64 opacity-50 transition-all duration-500 mb-4 md:mb-0">
               <Image
                 src={features[(currentFeature - 1 + features.length) % features.length].image}
                 alt="Previous feature"
@@ -65,8 +61,7 @@ const Feature = () => {
               </div>
             </div>
 
-            {/* Current Feature */}
-            <div className="relative w-96 h-96 z-10 transition-all duration-500">
+            <div className="relative w-96 h-96 z-10 transition-all duration-500 mb-4 md:mb-0">
               <Image
                 src={features[currentFeature].image}
                 alt="Current feature"
@@ -81,7 +76,6 @@ const Feature = () => {
               </div>
             </div>
 
-            {/* Next Feature */}
             <div className="relative w-64 h-64 opacity-50 transition-all duration-500">
               <Image
                 src={features[(currentFeature + 1) % features.length].image}
@@ -102,10 +96,9 @@ const Feature = () => {
             </div>
           </div>
 
-          {/* Navigation Buttons */}
           <button
             onClick={prevFeature}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all"
+            className="md:absolute md:left-0 md:top-1/2 md:-translate-y-1/2 md:-translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all mt-6 md:mt-0 mx-auto md:mx-0"
             aria-label="Previous feature"
           >
             <svg
@@ -121,7 +114,7 @@ const Feature = () => {
           </button>
           <button
             onClick={nextFeature}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all"
+            className="md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 md:translate-x-4 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all mt-4 md:mt-0 mx-auto md:mx-0"
             aria-label="Next feature"
           >
             <svg

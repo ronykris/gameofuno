@@ -11,6 +11,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { connectWallet, getConnectedWalletAddress } from "@/utils/walletUtils";
 import { addClaimableBalance, claimableBalancesApi } from '@/utils/supabase';
+import { getContractNew } from "../../lib/web3";
+import { ethers } from "ethers";
 
 //NUMBER CODES FOR ACTION CARDS
 //SKIP - 100
@@ -435,15 +437,12 @@ const Game = ({ room, currentUser }) => {
       const winnerPlayer = winnerName;
 
       // Get the winner's wallet address
-      // In this implementation, we'll use window.diam.address which should be the current user's address
       let currentUserAddress = getConnectedWalletAddress();
       console.log('Current user wallet address:', currentUserAddress);
 
-      // If wallet is not connected, try to connect it
       if (!currentUserAddress) {
         console.log('Wallet not connected. Attempting to connect...');
         
-        // Show connecting toast
         toast({
           title: "Connecting Wallet",
           description: "Please approve the connection request in your wallet extension.",
@@ -451,7 +450,6 @@ const Game = ({ room, currentUser }) => {
           duration: 5000,
         });
         
-        // Try to connect wallet
         try {
           currentUserAddress = await connectWallet();
         } catch (error) {
@@ -514,6 +512,50 @@ const Game = ({ room, currentUser }) => {
 
         const supabaseResponse = await claimableBalancesApi.addClaimableBalance(currentUserAddress, data.balanceId);
         console.log('Supabase response:', supabaseResponse);
+
+        try {
+          const { contract } = await getContractNew();
+          
+          if (!contract) {
+            console.error('Failed to get contract instance');
+            return;
+          }
+          
+          const gameResultData = {
+            winnerAddress: currentUserAddress,
+            winnerPlayer: winnerPlayer,
+            // loserAddresses: [opponentAddress], 
+            loserPlayers: ["Player 1", "Player 2"].filter(player => player !== winnerPlayer),
+            gameId: room,
+            timestamp: Date.now()
+          };
+          
+          const gameResultString = JSON.stringify(gameResultData);
+          const gameHash = ethers.keccak256(ethers.toUtf8Bytes(gameResultString));
+          
+          console.log('Calling endGame with gameId:', room, 'and gameHash:', gameHash);
+          
+          const tx = await contract.endGame(BigInt(room), gameHash);
+          await tx.wait();
+          
+          console.log('Game ended successfully on the blockchain!', tx);
+          
+          toast({
+            title: "Game Ended on Blockchain",
+            description: "The game has been successfully recorded on the blockchain.",
+            variant: "success",
+            duration: 5000,
+          });
+        } catch (error) {
+          console.error('Failed to end game on blockchain:', error);
+          
+          toast({
+            title: "Blockchain Update Failed",
+            description: "There was an issue recording the game on the blockchain. The reward was still created.",
+            variant: "warning",
+            duration: 5000,
+          });
+        }
 
         toast({
           title: "Reward Created!",
