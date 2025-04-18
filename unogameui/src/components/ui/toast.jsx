@@ -24,10 +24,14 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "border bg-grey-100 text-foreground",
         success: "bg-[#2C8C5C] text-white border-[#2C8C5C] shadow-[0_4px_10px_rgba(44,140,92,0.25)]",
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "group border-red-500 bg-red-300 text-black shadow-[0_4px_10px_rgba(44,140,92,0.25)]",
+        warning:
+          "group border-yellow-500 bg-yellow-300 text-black shadow-[0_4px_10px_rgba(44,140,92,0.25)]",
+        info:
+          "group border-blue-500 bg-blue-300 text-black shadow-[0_4px_10px_rgba(44,140,92,0.25)]",
       },
     },
     defaultVariants: {
