@@ -10,7 +10,7 @@ const Feature = () => {
     {
       title: "User-Friendly UI",
       description: "Enjoy the classic fun of UNO with a modern twist. Our intuitive interface is designed for all players — whether you're a casual gamer or a crypto enthusiast, jumping into a game has never been easier.",
-      image: "/homePage/gaming.jpg"
+      image: "/homePage/user-ui.jpg"
     },
     {
       title: "Gaming Experience",
@@ -20,7 +20,7 @@ const Feature = () => {
     {
       title: "Powered by Blockchain",
       description: "Experience true ownership, transparency, and fairness in every game.",
-      image: "/homePage/gaming.jpg"
+      image: "/homePage/Decentralise_gaming.jpeg"
     }
   ];
 

@@ -58,7 +58,7 @@ const Hero = () => {
               alt="zkUNO Logo"
               width={200}
               height={60}
-              className="mb-4"
+              className="mb-4 rounded-full"
             />
             <p className="text-white/80 text-lg">A zk Powered UNO Game on Blockchain</p>
           </div>

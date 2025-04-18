@@ -11,7 +11,7 @@ import Procedure from "@/components/homePage/Procedure"
 export default function Home() {
   return (
     <main className="bg-black overflow-hidden">
-      <div className="relative">
+      <div className="">
         <Navbar />
         <Hero />
         <div className="relative">
