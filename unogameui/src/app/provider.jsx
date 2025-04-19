@@ -1,6 +1,5 @@
 'use client';
 
-import '@rainbow-me/rainbowkit/styles.css';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { config } from "../lib/wagmi";
 import { WagmiProvider } from 'wagmi';

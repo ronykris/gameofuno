@@ -1,7 +1,7 @@
 "use client";
 
 import {SoundProvider} from "@/context/SoundProvider";
-import Room from "@/components/newComponents/Room";
+import Room from "@/components/gameroom/Room"
 
 const GameWithSoundProvider = () => {
   return (

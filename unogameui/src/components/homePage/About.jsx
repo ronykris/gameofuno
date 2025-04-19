@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { fadeIn, staggerContainer } from '@/util/motion';
+import { fadeIn, staggerContainer } from '@/utils/motion';
 
 const About = () => {
   const stats = [

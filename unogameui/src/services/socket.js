@@ -1,6 +1,6 @@
 import io from "socket.io-client";
 
-const ENDPOINT = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'https://tonunosocket-6k6gsdlfoa-el.a.run.app/';
+const ENDPOINT = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
 
 const connectionOptions = {
   forceNew: true,

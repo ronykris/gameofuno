@@ -1,11 +1,10 @@
-import Hero from "@/components/homePage/Hero"
-import Navbar from "@/components/homePage/Navbar"
-import About from "@/components/homePage/About"
-import Footer from "@/components/homePage/Footer"
-import Quote from "@/components/homePage/Quote"
-import Feature from "@/components/homePage/Feature"
-import Partner from "@/components/homePage/Partner"
-import Procedure from "@/components/homePage/Procedure"
+import Hero from "@/components/homepage/Hero"
+import Navbar from "@/components/homepage/Navbar"
+import About from "@/components/homepage/About"
+import Footer from "@/components/homepage/Footer"
+import Feature from "@/components/homepage/Feature"
+import Partner from "@/components/homepage/Partner"
+import Procedure from "@/components/homepage/Procedure"
 
 
 export default function Home() {
@@ -21,7 +20,6 @@ export default function Home() {
           <Procedure />
         </div>
         <div className="relative">
-          {/* <Quote /> */}
           <Footer />
         </div>
       </div>
