@@ -62,4 +62,5 @@ export interface UnoGameContract {
   getGameActions: (gameId: bigint) => Promise<{ actionHash: string }[]>;
   endGame: (gameId: bigint, gameHash: string) => Promise<any>;
   getActiveGames: () => Promise<bigint[]>;
+  getNotStartedGames: () => Promise<bigint[]>;
 }

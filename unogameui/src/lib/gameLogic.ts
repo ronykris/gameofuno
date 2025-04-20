@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
 import { Card, CardColor, CardValue, OffChainGameState, Action } from './types';
 import CryptoJS from 'crypto-js';
-import { MutableRefObject } from 'react';
 import { updateGlobalCardHashMap, getGlobalCardHashMap, getCardFromGlobalHashMap } from './globalState';
 import { HashedDiscardPile } from './discardPile';
 import { hash } from 'crypto';
@@ -107,7 +106,7 @@ export function convertBigIntsToStrings(obj: any): any {
   return obj;
 }
 
-export function startGame(state: OffChainGameState, socket?: MutableRefObject<any>): OffChainGameState {
+export function startGame(state: OffChainGameState, socket?: any): OffChainGameState {
   const newState = { ...state };
   deck = shuffleDeck(createDeck(), Number(state.id));
   console.log(deck)
@@ -155,19 +154,19 @@ export function startGame(state: OffChainGameState, socket?: MutableRefObject<an
   newState.isStarted = true;
   newState.stateHash = hashState(newState);
 
-  if (socket && socket.current) {
+  if (socket) {
     const cardHashMapObject = Object.fromEntries(getGlobalCardHashMap());
     const roomId = `game-${state.id.toString()}`;
 
     // Emit to the specific room instead of just emitting the event
-    socket.current.emit('gameStarted', {
+    socket.emit('gameStarted', {
       newState: convertBigIntsToStrings(newState),
       cardHashMap: cardHashMapObject,
       roomId: roomId
     });
 
     // Also emit the event with the room-specific name to ensure all listeners receive it
-    socket.current.emit(`gameStarted-${roomId}`, {
+    socket.emit(`gameStarted-${roomId}`, {
       newState: convertBigIntsToStrings(newState),
       cardHashMap: cardHashMapObject
     });

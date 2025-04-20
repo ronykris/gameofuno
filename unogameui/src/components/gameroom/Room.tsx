@@ -223,6 +223,9 @@ const Room = () => {
 
     try {
       console.log('Starting game on contract...')
+      
+      await contract.startGame(gameId)
+
       console.log('Game started on contract')
 
       console.log('Initializing local game state...')

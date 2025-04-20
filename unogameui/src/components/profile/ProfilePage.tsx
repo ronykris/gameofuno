@@ -67,7 +67,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userAccount, connectWallet, i
             </>
           )}
           
-          <div className="bg-black/30 p-6 rounded-lg">
+          {/* <div className="bg-black/30 p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Game Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-purple-500/20 p-4 rounded-lg text-center">
@@ -83,7 +83,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userAccount, connectWallet, i
                 <p className="text-sm">UNO Cards</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

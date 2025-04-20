@@ -105,7 +105,7 @@ contract UnoGame is ReentrancyGuard {
 
         for (uint256 i = 0; i < _activeGames.length; i++) {
             uint256 gameId = _activeGames[i];
-            if (games[gameId].status != GameStatus.NotStarted) {
+            if (games[gameId].status == GameStatus.NotStarted) {
                 notStartedGames[count] = gameId;
                 count++;
             }

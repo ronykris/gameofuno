@@ -5,7 +5,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import TokenInfoBar from '@/components/TokenBar'
 import { UnoGameContract } from '@/lib/types';
-import { getContract, getContractNew } from '@/lib/web3';
+import { getContractNew } from '@/lib/web3';
 import io, { Socket } from "socket.io-client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -63,7 +63,7 @@ export default function PlayGame() {
         if (contract) {
             try {
                 console.log('Fetching active games...')
-                const activeGames = await contract.getActiveGames()
+                const activeGames = await contract.getNotStartedGames()
                 console.log('Active games:', activeGames)
                 setGames(activeGames)
             } catch (error) {
