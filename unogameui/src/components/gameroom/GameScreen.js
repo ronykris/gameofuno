@@ -42,7 +42,6 @@ const GameScreen = ({
         isSkipButtonDisabled={turn !== currentUser || !drawButtonPressed}
         onSkipButtonHandler={onSkipButtonHandler}
       />
-      {/* <MemoizedMessages mainPlayer={currentUser} /> */}
     </>
   );
 };

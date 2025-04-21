@@ -14,12 +14,10 @@ const About = () => {
 
   return (
     <section className="py-20 bg-[#0A0A0A] relative overflow-hidden">
-      {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-blue-900/20" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Column - 2025 and Image */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -47,7 +45,6 @@ const About = () => {
             </motion.div>
           </motion.div>
 
-          {/* Right Column - Content */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -74,7 +71,6 @@ const About = () => {
               ZkUNO is a cutting-edge, multiplayer digital adaptation of the classic UNO game, now enhanced with bloackchain technology to ensure privacy, fairness, and security in every game. Whether you're a casual player or a competitive strategist, it offers a revolutionary gaming experience that combines the fun of UNO with the power of blockchain technology
             </motion.p>
 
-            {/* Stats Grid */}
             {/* <motion.div
               variants={fadeIn('up', 'tween', 0.5, 1)}
               className="grid grid-cols-2 gap-6"

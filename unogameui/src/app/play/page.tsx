@@ -281,7 +281,6 @@ export default function PlayGame() {
                     <div className='absolute -left-8 right-8 -top-14 bottom-14 bg-no-repeat bg-[url("/card-0.png")] animate-pulse'></div>
                 </div>
                 <div className='absolute top-0 md:left-1/2 md:right-0 bottom-0 w-[calc(100%-2rem)] md:w-auto md:pr-20 py-12'>
-                    {/* <div className='text-[#ffffff] font-bold text-4xl text-shadow-md mb-2'>Hello {lp.initData?.user?.firstName ?? "User"},</div> */}
                     {!account ?
                         <div className='relative text-center flex justify-center'>
                             <img src='/login-button-bg.png' />
@@ -290,7 +289,6 @@ export default function PlayGame() {
                             </div>
                         </div>
                         : <>
-                            {/* <button onClick={sendDiam}>Send Diam</button> */}
                             <StyledButton onClick={() => createGame()} className='w-fit bg-[#00b69a] bottom-4 text-2xl my-3 mx-auto'>{createLoading == true ? 'Creating...' : 'Create Game Room'}</StyledButton>
                             <p className='text-white text-sm font-mono'>Note: Don't join the room where game is already started</p>
                             {joinLoading == true && <div className='text-white mt-2 text-2xl shadow-lg'>Wait, while we are joining your game room...</div>}
@@ -307,17 +305,6 @@ export default function PlayGame() {
                             </ScrollArea>
                         </>
                     }
-                    {/* {"hello" &&
-                        <div className='flex flex-col items-center'>
-                            <StyledButton onClick={() => router.push("/create")} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Create Table </StyledButton>
-                            <StyledButton onClick={() => router.push("/game/join")} className='w-fit bg-[#00b69a] bottom-4 text-2xl mt-6'>Join Game </StyledButton>
-                            {loading &&
-                                <div className='text-white mt-2 text-2xl shadow-lg'>
-                                    Wait, while we are retriving your details...
-                                </div>
-                            }
-                        </div>
-                    } */}
                 </div>
             </div>
             <Toaster />

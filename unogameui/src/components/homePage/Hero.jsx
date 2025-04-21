@@ -36,7 +36,6 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen bg-[#0A0A0A]">
       <div className="relative w-full h-screen">
-        {/* Background image with smoke effect */}
         <div className="absolute inset-0">
           <Image
             src={slides[currentSlide].image}
@@ -45,13 +44,10 @@ const Hero = () => {
             className="object-cover transition-opacity duration-500"
             priority
           />
-          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0A]/80 to-transparent" />
         </div>
 
-        {/* Content */}
         <div className="absolute inset-0 flex flex-col items-start justify-center z-10 px-8 md:px-16 lg:px-24">
-          {/* Logo */}
           <div className="mb-8">
             <Image
               src={slides[currentSlide].logo}
@@ -63,7 +59,6 @@ const Hero = () => {
             <p className="text-white/80 text-lg">A zk Powered UNO Game on Blockchain</p>
           </div>
 
-          {/* Hero Text */}
           <div className="space-y-2">
             <h1 className="text-6xl md:text-7xl text-white font-bold tracking-wider">
               {slides[currentSlide].title}
@@ -73,7 +68,6 @@ const Hero = () => {
             </h1>
           </div>
 
-          {/* Navigation */}
           <div className="flex gap-4 mt-12">
             {slides.map((_, index) => (
               <button
@@ -89,11 +83,9 @@ const Hero = () => {
             ))}
           </div>
 
-          {/* Start Play Button */}
           <StyledButton onClick={() => router.push("/play")} roundedStyle='rounded-full' className='bg-[#ff9000] text-2xl mt-6'>Start Game</StyledButton>
         </div>
 
-        {/* Side Numbers */}
         <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-8 text-2xl text-white/50">
           <span className={currentSlide === 0 ? 'text-white' : ''}>01</span>
           <span className={currentSlide === 1 ? 'text-white' : ''}>02</span>
