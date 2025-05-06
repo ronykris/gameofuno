@@ -9,7 +9,7 @@ const DIAMNET_SECRET_KEY = process.env.DIAMNET_SECRET_KEY;
  * @param {string} amount - The amount to lock in the claimable balance (default: "5")
  * @returns {Promise<Object>} - The transaction result
  */
-async function createClaimableBalance(destinationPublicKey, amount = "5") {
+async function createClaimableBalance(destinationPublicKey, amount = "6") {
   if (!DIAMNET_SECRET_KEY) {
     throw new Error("DIAMNET_SECRET_KEY environment variable is not set");
   }
